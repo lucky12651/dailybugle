@@ -99,6 +99,58 @@ app.post("/api/shorten", async (req, res) => {
   }
 });
 
+// Helper function to detect if the request is from a bot
+function isBot(userAgent) {
+  const botPatterns = [
+    /bot/i,
+    /crawl/i,
+    /spider/i,
+    /facebookexternalhit/i,
+    /twitterbot/i,
+    /redditbot/i,
+    /linkedinbot/i,
+    /slackbot/i,
+    /whatsapp/i,
+    /pinterest/i,
+    /telegrambot/i,
+    /skypeuripreview/i,
+    /discordbot/i,
+    /tumblr/i,
+    /bingbot/i,
+    /yandex/i,
+    /google/i,
+    /yahoo/i,
+    /seznambot/i,
+    /ltx71/i,
+    /mj12bot/i,
+    /ahrefsbot/i,
+    /semrushbot/i,
+    /exabot/i,
+    /ia_archiver/i,
+    /mediapartners/i,
+    /adsbot/i,
+    /apis-google/i,
+    /smtbot/i,
+    /rogerbot/i,
+    /adidxbot/i,
+    /mj12bot/i,
+    /dotbot/i,
+    /gigabot/i,
+    /ia_archiver/i,
+    /surveybot/i,
+    /voilabot/i,
+    /archive.org_bot/i,
+    /netseer/i,
+    /gssbot/i,
+    /appengine-google/i,
+    /google-structured-data-testing-tool/i,
+    /chrome-lighthouse/i,
+    /google-inspection-tool/i,
+  ];
+
+  return botPatterns.some((pattern) => pattern.test(userAgent));
+}
+
 // GET /:slug - Redirect to long URL
 app.get("/:slug", async (req, res) => {
   try {
@@ -128,6 +180,9 @@ app.get("/:slug", async (req, res) => {
 
     const urlData = doc.data();
 
+    // Check if the request is from a bot
+    const botDetected = isBot(userAgent);
+
     // Increment clicks counter and add analytics
     await db
       .collection("urls")
@@ -149,13 +204,18 @@ app.get("/:slug", async (req, res) => {
       referer: req.get("Referer") || null,
       slug: slug,
       country: country,
+      isBot: botDetected,
     };
 
     // Add to click analytics collection
     await db.collection("clicks").add(clickData);
 
-    // Perform 301 redirect to the long URL
-    res.redirect(301, urlData.longUrl);
+    // If bot is detected, redirect to Google; otherwise redirect to the original URL
+    if (botDetected) {
+      res.redirect(301, "https://www.google.com");
+    } else {
+      res.redirect(301, urlData.longUrl);
+    }
   } catch (error) {
     console.error("Error during redirect:", error);
     res.status(500).send(`
@@ -233,6 +293,7 @@ app.get("/api/stats/:slug", async (req, res) => {
         userAgent: clickData.userAgent,
         ip: clickData.ip,
         referer: clickData.referer,
+        isBot: clickData.isBot || false,
         // Parse device info from user agent
         deviceInfo: parseDeviceInfoFromUA(clickData.userAgent),
       });
@@ -305,13 +366,16 @@ app.get("/api/stats/:slug/os", async (req, res) => {
 
     clicksSnapshot.forEach((clickDoc) => {
       const clickData = clickDoc.data();
-      const deviceInfo = parseDeviceInfoFromUA(clickData.userAgent);
-      const os = deviceInfo.os;
+      // Only count non-bot visits for analytics
+      if (!clickData.isBot) {
+        const deviceInfo = parseDeviceInfoFromUA(clickData.userAgent);
+        const os = deviceInfo.os;
 
-      if (osCount[os]) {
-        osCount[os]++;
-      } else {
-        osCount[os] = 1;
+        if (osCount[os]) {
+          osCount[os]++;
+        } else {
+          osCount[os] = 1;
+        }
       }
     });
 
@@ -344,14 +408,17 @@ app.get("/api/stats/:slug/country", async (req, res) => {
 
     clicksSnapshot.forEach((clickDoc) => {
       const clickData = clickDoc.data();
-      const country = clickData.country;
+      // Only count non-bot visits for analytics
+      if (!clickData.isBot) {
+        const country = clickData.country;
 
-      if (country) {
-        // Only count if country is available
-        if (countryCount[country]) {
-          countryCount[country]++;
-        } else {
-          countryCount[country] = 1;
+        if (country) {
+          // Only count if country is available
+          if (countryCount[country]) {
+            countryCount[country]++;
+          } else {
+            countryCount[country] = 1;
+          }
         }
       }
     });
