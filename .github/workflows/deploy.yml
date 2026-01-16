@@ -1,22 +1,14 @@
-name: Auto Deploy URL Shortener (Node + React)
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
           script: |
+            set -e
             echo "🚀 Starting deployment"
 
             cd ${{ secrets.APP_PATH }}
@@ -27,7 +19,7 @@ jobs:
             echo "📦 Installing backend dependencies"
             npm install
 
-            echo "♻️ Restarting backend with PM2"
+            echo "♻️ Restarting backend"
             pm2 reload all || pm2 start server/index.js --name url-shortener-api
 
             if [ -d "client" ]; then
