@@ -32,16 +32,15 @@ jobs:
             git pull origin main
 
             echo "📦 Installing backend dependencies"
+            cd server
             npm install
 
-            echo "♻️ Restarting backend"
-            pm2 reload all || pm2 start server/index.js --name url-shortener-api
+            echo "♻️ Restarting backend with PM2"
+            pm2 reload url-shortener-api || pm2 start index.js --name url-shortener-api
 
-            if [ -d "client" ]; then
-              echo "🎨 Building frontend"
-              cd client
-              npm install
-              npm run build
-            fi
+            echo "🎨 Building frontend"
+            cd ../client
+            npm install
+            npm run build
 
             echo "✅ Deployment completed successfully"
