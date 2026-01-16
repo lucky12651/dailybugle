@@ -844,28 +844,76 @@ function getCountryName(code) {
   return countryCodes[code] || code;
 }
 
+// Health check endpoint
+app.get("/api/health", async (req, res) => {
+  try {
+    // Test Firebase connection
+    const testDoc = await db.collection("urls").limit(1).get();
+
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      firebase: "connected",
+      documentCount: testDoc.size,
+      environment: {
+        BASE_URL: process.env.BASE_URL || "NOT SET",
+        NODE_ENV: process.env.NODE_ENV || "NOT SET",
+        PORT: process.env.PORT || "3000",
+      },
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    res.status(500).json({
+      status: "unhealthy",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // GET /api/recent
 app.get("/api/recent", async (req, res) => {
   try {
+    console.log("Recent links request received");
+
     const snap = await db
       .collection("urls")
       .orderBy("createdAt", "desc")
       .limit(20)
       .get();
 
-    const list = snap.docs.map((d) => ({
-      slug: d.id,
-      longUrl: d.data().longUrl,
-      clicks: d.data().clicks || 0,
-      shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${d.id}`,
-      createdAt: d.data().createdAt?.toDate
-        ? d.data().createdAt.toDate().toISOString()
-        : null,
-    }));
+    console.log("Found documents:", snap.size);
 
+    const list = snap.docs.map((d) => {
+      const data = d.data();
+      console.log("Processing document:", d.id, data.longUrl);
+
+      return {
+        slug: d.id,
+        longUrl: data.longUrl,
+        clicks: data.clicks || 0,
+        shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${
+          d.id
+        }`,
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : null,
+      };
+    });
+
+    console.log("Returning", list.length, "recent links");
     res.json(list);
   } catch (e) {
-    res.status(500).json({ error: "Server error" });
+    console.error("=== RECENT LINKS ERROR ===");
+    console.error("Error:", e.message);
+    console.error("Stack:", e.stack);
+    console.error("===========================");
+
+    res.status(500).json({
+      error: "Server error",
+      message: e.message,
+      timestamp: new Date().toISOString(),
+    });
   }
 });
 
