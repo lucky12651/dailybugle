@@ -15,7 +15,12 @@ const db = admin.firestore();
 const app = express();
 app.set("trust proxy", true);
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+  }),
+);
 
 // ===============================
 // 1. Serve React Build
@@ -441,7 +446,7 @@ app.get("/api/stats/:slug/traffic", async (req, res) => {
     const clicksByTime = {};
     clicksSnapshot.docs.forEach((doc) => {
       const click = doc.data();
-      if (click.timestamp) {
+      if (click.timestamp?.toDate) {
         const clickTime = click.timestamp.toDate();
         if (clickTime >= cutoffDate) {
           let timeKey;
@@ -819,7 +824,7 @@ app.get("/api/recent", async (req, res) => {
       longUrl: d.data().longUrl,
       clicks: d.data().clicks || 0,
       shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${d.id}`,
-      createdAt: d.data().createdAt
+      createdAt: d.data().createdAt?.toDate
         ? d.data().createdAt.toDate().toISOString()
         : null,
     }));
@@ -864,7 +869,9 @@ app.get("/api/stats/:slug", async (req, res) => {
 
         return {
           id: d.id,
-          timestamp: c.timestamp ? c.timestamp.toDate().toISOString() : null,
+          timestamp: c.timestamp?.toDate
+            ? c.timestamp.toDate().toISOString()
+            : null,
           ip: c.ip || null,
           location: location, // Human-readable location
           userAgent: c.userAgent || null,
@@ -877,13 +884,18 @@ app.get("/api/stats/:slug", async (req, res) => {
           },
         };
       })
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Safe sort
+      .sort((a, b) => {
+        if (!a.timestamp || !b.timestamp) return 0;
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
 
     res.json({
       slug,
       longUrl: data.longUrl,
       clicks: data.clicks || 0,
-      createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+      createdAt: data.createdAt?.toDate
+        ? data.createdAt.toDate().toISOString()
+        : null,
       clickDetails,
     });
   } catch (e) {
@@ -898,8 +910,8 @@ app.get("/api/stats/:slug", async (req, res) => {
 app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
   const slug = req.params.slug;
 
-  const reactRoutes = ["stats", "dashboard", "analytics"];
-  if (reactRoutes.includes(slug)) return next();
+  const blockedRoutes = ["api", "dashboard", "stats", "analytics", "recent"];
+  if (blockedRoutes.includes(slug)) return next();
 
   try {
     const doc = await db.collection("urls").doc(slug).get();
@@ -916,7 +928,11 @@ app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
 
     const deviceInfo = parseDeviceInfoFromUA(userAgent);
     const botDetection = detectBot(userAgent);
-    const geo = geoip.lookup(ip);
+    let cleanIP = ip;
+    if (cleanIP && cleanIP.includes("::ffff:")) {
+      cleanIP = cleanIP.replace("::ffff:", "");
+    }
+    const geo = geoip.lookup(cleanIP);
     const country = geo ? geo.country : null;
 
     // Compute human-readable location
