@@ -36,7 +36,7 @@ jobs:
             npm install
 
             echo "♻️ Restarting backend with PM2"
-            pm2 reload url-shortener-api || pm2 start index.js --name url-shortener-api
+            pm2 reload dailybugle-api || pm2 start index.js --name dailybugle-api
 
             echo "🎨 Building frontend"
             cd ../client
