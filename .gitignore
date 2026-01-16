@@ -60,3 +60,10 @@ temp/
 
 # React specific
 *.orig
+
+node_modules
+client/node_modules
+.env
+build
+dist
+logs
