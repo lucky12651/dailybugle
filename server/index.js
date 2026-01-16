@@ -6,10 +6,18 @@ const geoip = require("geoip-lite");
 const path = require("path");
 
 // Firebase Setup
-const serviceAccount = require("./firebaseServiceAccount.json");
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+try {
+  const serviceAccount = require("./firebaseServiceAccount.json");
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  console.log("Firebase initialized successfully");
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+  console.error("Error details:", error.message);
+  console.error("Stack trace:", error.stack);
+  process.exit(1);
+}
 const db = admin.firestore();
 
 const app = express();
@@ -136,24 +144,35 @@ function parseDeviceInfoFromUA(userAgent = "") {
 // POST /api/shorten
 app.post("/api/shorten", async (req, res) => {
   try {
+    console.log("Shorten request received:", req.body);
+
     const { longUrl, customSlug } = req.body;
 
-    if (!longUrl) return res.status(400).json({ error: "Long URL required" });
+    if (!longUrl) {
+      console.log("Missing longUrl in request");
+      return res.status(400).json({ error: "Long URL required" });
+    }
 
     try {
       new URL(longUrl);
-    } catch {
+    } catch (urlError) {
+      console.log("Invalid URL provided:", longUrl, urlError.message);
       return res.status(400).json({ error: "Invalid URL" });
     }
 
     let slug = customSlug || generateRandomSlug();
+    console.log("Generated slug:", slug);
 
     if (customSlug) {
+      console.log("Checking if custom slug exists:", slug);
       const exists = await db.collection("urls").doc(slug).get();
-      if (exists.exists)
+      if (exists.exists) {
+        console.log("Custom slug already exists:", slug);
         return res.status(409).json({ error: "Custom slug already exists" });
+      }
     }
 
+    console.log("Creating new URL document");
     await db.collection("urls").doc(slug).set({
       slug,
       longUrl,
@@ -161,13 +180,28 @@ app.post("/api/shorten", async (req, res) => {
       clicks: 0,
     });
 
-    const shortUrl = `${
-      process.env.BASE_URL || "https://dailybugle.tech"
-    }/${slug}`;
+    const baseUrl = process.env.BASE_URL || "https://dailybugle.tech";
+    console.log("Using base URL:", baseUrl);
+
+    const shortUrl = `${baseUrl}/${slug}`;
+    console.log("Generated short URL:", shortUrl);
+
     res.json({ slug, longUrl, shortUrl });
   } catch (e) {
-    console.error("Shorten error:", e);
-    res.status(500).json({ error: "Server error" });
+    console.error("=== SHORTEN ENDPOINT ERROR ===");
+    console.error("Error type:", e.constructor.name);
+    console.error("Error message:", e.message);
+    console.error("Error stack:", e.stack);
+    console.error("Request body:", req.body);
+    console.error("================================");
+
+    // More descriptive error response
+    res.status(500).json({
+      error: "Server error",
+      message: e.message,
+      type: e.constructor.name,
+      timestamp: new Date().toISOString(),
+    });
   }
 });
 
