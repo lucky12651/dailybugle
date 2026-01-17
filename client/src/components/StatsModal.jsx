@@ -53,7 +53,7 @@ const StatsModal = ({
   return (
     showStats && (
       <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[60vh] overflow-y-auto shadow-2xl">
+        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[98vh] overflow-y-auto shadow-2xl">
           <div className="p-6">
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-xl font-bold text-gray-800">
