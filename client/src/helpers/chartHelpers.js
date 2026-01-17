@@ -335,6 +335,32 @@ export const renderTrafficChart = (canvasId, chartData) => {
           },
         ],
       },
+      plugins: [
+        {
+          id: "datalabels",
+          afterDatasetsDraw: function (chart) {
+            const ctx = chart.ctx;
+            const dataset = chart.data.datasets[0];
+            const meta = chart.getDatasetMeta(0);
+
+            ctx.save();
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillStyle = "#374151";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+
+            meta.data.forEach((point, index) => {
+              const value = dataset.data[index];
+              if (value > 0) {
+                // Only show labels for non-zero values
+                ctx.fillText(value, point.x, point.y - 10);
+              }
+            });
+
+            ctx.restore();
+          },
+        },
+      ],
       options: {
         responsive: true,
         maintainAspectRatio: false,
