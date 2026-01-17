@@ -60,3 +60,7 @@ temp/
 
 # React specific
 *.orig
+
+# Private keys
+*.pem
+server/oracle_key.pem
