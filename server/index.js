@@ -4,6 +4,7 @@ require("dotenv").config();
 const cors = require("cors");
 const geoip = require("geoip-lite");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
 
 // Firebase Setup
 try {
@@ -20,6 +21,17 @@ try {
 }
 const db = admin.firestore();
 
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: "Too many requests from this IP, please try again later.",
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
 const app = express();
 app.set("trust proxy", true);
 app.use(express.json());
@@ -29,6 +41,9 @@ app.use(
     methods: ["GET", "POST"],
   }),
 );
+
+// Apply rate limiting to all API routes
+app.use("/api/", limiter);
 
 // ===============================
 // 1. Serve React Build
@@ -871,10 +886,23 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// Cache for recent links
+let recentLinksCache = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // GET /api/recent
 app.get("/api/recent", async (req, res) => {
   try {
     console.log("Recent links request received");
+
+    const now = Date.now();
+
+    // Return cached data if still valid
+    if (recentLinksCache && now - cacheTimestamp < CACHE_DURATION) {
+      console.log("Returning cached recent links");
+      return res.json(recentLinksCache);
+    }
 
     const snap = await db
       .collection("urls")
@@ -901,7 +929,11 @@ app.get("/api/recent", async (req, res) => {
       };
     });
 
-    console.log("Returning", list.length, "recent links");
+    // Cache the results
+    recentLinksCache = list;
+    cacheTimestamp = now;
+
+    console.log("Returning", list.length, "recent links (cached)");
     res.json(list);
   } catch (e) {
     console.error("=== RECENT LINKS ERROR ===");
