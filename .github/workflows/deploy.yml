@@ -29,7 +29,8 @@ jobs:
             cd ${{ secrets.APP_PATH }}
 
             echo "📥 Pulling latest code"
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
 
             echo "📦 Installing backend dependencies"
             cd server
