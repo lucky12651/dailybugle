@@ -28,7 +28,7 @@ Create a `.env` file in the server directory with:
 GOOGLE_APPLICATION_CREDENTIALS="./firebaseServiceAccount.json"
 FIRESTORE_DATABASE_URL="https://your-project-id.firebaseio.com"
 PORT=3000
-BASE_URL=http://localhost:3000
+BASE_URL=https://dailybugle.tech
 ```
 
 ## 5. Firestore Security Rules
