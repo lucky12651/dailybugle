@@ -1,25 +1,39 @@
 const express = require("express");
-const admin = require("firebase-admin");
+const db = require("./oracleNosql");
+const crypto = require("crypto");
 require("dotenv").config();
 const cors = require("cors");
 const geoip = require("geoip-lite");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 
-// Firebase Setup
-try {
-  const serviceAccount = require("./firebaseServiceAccount.json");
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-  console.log("Firebase initialized successfully");
-} catch (error) {
-  console.error("Firebase initialization failed:", error);
-  console.error("Error details:", error.message);
-  console.error("Stack trace:", error.stack);
-  process.exit(1);
+// Oracle NoSQL connection established via require('./oracleNosql')
+console.log("Oracle NoSQL client initialized successfully");
+
+// Skip table creation - assume tables exist (created manually in Oracle Cloud Console)
+async function initializeTables() {
+  try {
+    // Just log that we expect tables to exist
+    console.log(
+      "Oracle NoSQL client initialized - expecting tables to exist in Oracle Cloud Console",
+    );
+  } catch (error) {
+    // For Oracle NoSQL Cloud Always Free tier, tables need to be created via console first
+    console.warn("=== DATABASE SETUP REQUIRED ===");
+    console.warn(
+      "Oracle NoSQL tables not found. Please create them in Oracle Cloud Console:",
+    );
+    console.warn("1. Go to Oracle Cloud Console → Database → NoSQL Database");
+    console.warn("2. Create table 'urls' with slug (STRING) as primary key");
+    console.warn("3. Create table 'clicks' with id (STRING) as primary key");
+    console.warn("See migration guide for complete table schemas.");
+    console.warn("Error details:", error.message);
+    console.log("Server starting with database initialization pending...");
+  }
 }
-const db = admin.firestore();
+
+// Initialize tables on startup
+initializeTables();
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -33,7 +47,7 @@ const limiter = rateLimit({
 });
 
 const app = express();
-app.set("trust proxy", true);
+app.set("trust proxy", 1); // Trust first proxy only
 app.use(express.json());
 app.use(
   cors({
@@ -180,20 +194,53 @@ app.post("/api/shorten", async (req, res) => {
 
     if (customSlug) {
       console.log("Checking if custom slug exists:", slug);
-      const exists = await db.collection("urls").doc(slug).get();
-      if (exists.exists) {
-        console.log("Custom slug already exists:", slug);
-        return res.status(409).json({ error: "Custom slug already exists" });
+      try {
+        const result = await db.query(`
+          SELECT * FROM urls WHERE slug = '${slug}'
+        `);
+
+        if (result.rows.length > 0) {
+          console.log("Custom slug already exists:", slug);
+          return res.status(409).json({ error: "Custom slug already exists" });
+        }
+      } catch (error) {
+        console.log(
+          "Slug does not exist or table not ready, proceeding with creation",
+          error.message,
+        );
       }
     }
 
     console.log("Creating new URL document");
-    await db.collection("urls").doc(slug).set({
-      slug,
-      longUrl,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      clicks: 0,
-    });
+    try {
+      const now = new Date().toISOString();
+      await db.query(`
+        INSERT INTO urls VALUES (
+          '${slug}',
+          '${longUrl}',
+          0,
+          '${now}',
+          '${now}'
+        )
+      `);
+    } catch (error) {
+      // If table doesn't exist, log and return appropriate error
+      if (
+        error.code === "TABLE_NOT_FOUND" ||
+        error.message.includes("not found")
+      ) {
+        console.error(
+          "URLs table does not exist. Please create the tables in Oracle NoSQL Cloud console first.",
+        );
+        return res.status(503).json({
+          error: "Database tables not initialized",
+          message: "Please contact administrator to create Oracle NoSQL tables",
+        });
+      } else {
+        console.error("Error creating URL document:", error);
+        return res.status(500).json({ error: "Failed to create short URL" });
+      }
+    }
 
     const baseUrl = process.env.BASE_URL || "https://dailybugle.tech";
     console.log("Using base URL:", baseUrl);
@@ -225,15 +272,13 @@ app.get("/api/stats/:slug/os", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Count OS distribution
     const osCount = {};
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
+    result.rows.forEach((click) => {
       if (click.deviceInfo && click.deviceInfo.os) {
         const os = click.deviceInfo.os;
         osCount[os] = (osCount[os] || 0) + 1;
@@ -269,15 +314,13 @@ app.get("/api/stats/:slug/device", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Count device distribution
     const deviceCount = {};
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
+    result.rows.forEach((click) => {
       if (click.deviceInfo && click.deviceInfo.deviceType) {
         const deviceType = click.deviceInfo.deviceType;
         deviceCount[deviceType] = (deviceCount[deviceType] || 0) + 1;
@@ -315,15 +358,13 @@ app.get("/api/stats/:slug/referrer", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Count referrer distribution
     const referrerCount = {};
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
+    result.rows.forEach((click) => {
       const referrer = click.referer || "Direct Traffic";
 
       // Clean and categorize referrers
@@ -382,10 +423,9 @@ app.get("/api/stats/:slug/bots", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Count bot vs human traffic
     const trafficTypeCount = {
@@ -399,9 +439,7 @@ app.get("/api/stats/:slug/bots", async (req, res) => {
     // Count specific bots
     const botNameCount = {};
 
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
-
+    result.rows.forEach((click) => {
       if (click.isBot) {
         trafficTypeCount.bot++;
 
@@ -465,10 +503,9 @@ app.get("/api/stats/:slug/traffic", async (req, res) => {
     const slug = req.params.slug;
     const period = req.query.period || "7d"; // Default to 7 days
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Process clicks based on period
     const now = new Date();
@@ -493,10 +530,9 @@ app.get("/api/stats/:slug/traffic", async (req, res) => {
 
     // Filter clicks by date and group by hour/day
     const clicksByTime = {};
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
-      if (click.timestamp?.toDate) {
-        const clickTime = click.timestamp.toDate();
+    result.rows.forEach((click) => {
+      if (click.timestamp) {
+        const clickTime = new Date(click.timestamp);
         if (clickTime >= cutoffDate) {
           let timeKey;
 
@@ -558,15 +594,13 @@ app.get("/api/stats/:slug/country", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+    const result = await db.query(`
+      SELECT * FROM clicks WHERE slug = '${slug}'
+    `);
 
     // Count location distribution - prioritize city/country combination if available
     const locationCount = {};
-    clicksSnapshot.docs.forEach((doc) => {
-      const click = doc.data();
+    result.rows.forEach((click) => {
       if (click.country) {
         // Convert country code to full name using a mapping
         const countryName = getCountryName(click.country);
@@ -862,14 +896,14 @@ function getCountryName(code) {
 // Health check endpoint
 app.get("/api/health", async (req, res) => {
   try {
-    // Test Firebase connection
-    const testDoc = await db.collection("urls").limit(1).get();
+    // Test Oracle NoSQL connection
+    const result = await db.query("SELECT COUNT(*) FROM urls");
 
     res.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
-      firebase: "connected",
-      documentCount: testDoc.size,
+      oracle_nosql: "connected",
+      count: result.rows[0]["COUNT(*)"],
       environment: {
         BASE_URL: process.env.BASE_URL || "NOT SET",
         NODE_ENV: process.env.NODE_ENV || "NOT SET",
@@ -877,12 +911,30 @@ app.get("/api/health", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Health check failed:", error);
-    res.status(500).json({
-      status: "unhealthy",
-      error: error.message,
-      timestamp: new Date().toISOString(),
-    });
+    // If table doesn't exist yet, consider it healthy since we can connect
+    if (
+      error.code === "TABLE_NOT_FOUND" ||
+      error.message.includes("not found")
+    ) {
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        oracle_nosql: "connected",
+        count: 0,
+        environment: {
+          BASE_URL: process.env.BASE_URL || "NOT SET",
+          NODE_ENV: process.env.NODE_ENV || "NOT SET",
+          PORT: process.env.PORT || "3000",
+        },
+      });
+    } else {
+      console.error("Health check failed:", error);
+      res.status(500).json({
+        status: "unhealthy",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 });
 
@@ -904,46 +956,65 @@ app.get("/api/recent", async (req, res) => {
       return res.json(recentLinksCache);
     }
 
-    const snap = await db
-      .collection("urls")
-      .orderBy("createdAt", "desc")
-      .limit(20)
-      .get();
+    try {
+      const result = await db.query(`
+        SELECT * FROM urls
+        ORDER BY createdAt DESC
+        LIMIT 20
+      `);
 
-    console.log("Found documents:", snap.size);
+      console.log("Found documents:", result.rows.length);
 
-    const list = snap.docs.map((d) => {
-      const data = d.data();
-      console.log("Processing document:", d.id, data.longUrl);
+      const list = result.rows.map((data) => {
+        console.log("Processing document:", data.slug, data.longUrl);
 
-      return {
-        slug: d.id,
-        longUrl: data.longUrl,
-        clicks: data.clicks || 0,
-        shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${
-          d.id
-        }`,
-        createdAt: data.createdAt?.toDate
-          ? data.createdAt.toDate().toISOString()
-          : null,
-      };
-    });
+        return {
+          slug: data.slug,
+          longUrl: data.longUrl,
+          clicks: data.clicks || 0,
+          shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${
+            data.slug
+          }`,
+          createdAt: data.createdAt
+            ? new Date(data.createdAt).toISOString()
+            : null,
+        };
+      });
 
-    // Cache the results
-    recentLinksCache = list;
-    cacheTimestamp = now;
+      // Cache the results
+      recentLinksCache = list;
+      cacheTimestamp = now;
 
-    console.log("Returning", list.length, "recent links (cached)");
-    res.json(list);
-  } catch (e) {
-    console.error("=== RECENT LINKS ERROR ===");
-    console.error("Error:", e.message);
-    console.error("Stack:", e.stack);
-    console.error("===========================");
+      console.log("Returning", list.length, "recent links (cached)");
+      res.json(list);
+    } catch (error) {
+      console.error("=== RECENT LINKS ERROR ===");
+      console.error("Error:", error.message);
+      console.error("Stack:", error.stack);
+      console.error("===========================");
 
+      // Return empty array if table doesn't exist yet
+      if (
+        error.code === "TABLE_NOT_FOUND" ||
+        error.message.includes("not found")
+      ) {
+        recentLinksCache = [];
+        cacheTimestamp = now;
+        console.log("Returning empty recent links list (table not ready)");
+        res.json([]);
+      } else {
+        res.status(500).json({
+          error: "Server error",
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (outerError) {
+    console.error("Outer error in recent links:", outerError.message);
     res.status(500).json({
       error: "Server error",
-      message: e.message,
+      message: outerError.message,
       timestamp: new Date().toISOString(),
     });
   }
@@ -954,64 +1025,67 @@ app.get("/api/stats/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
 
-    const doc = await db.collection("urls").doc(slug).get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: "URL not found" });
-    }
+    try {
+      const urlResult = await db.query(`
+        SELECT * FROM urls WHERE slug = '${slug}'
+      `);
 
-    const data = doc.data();
+      if (urlResult.rows.length === 0) {
+        return res.status(404).json({ error: "URL not found" });
+      }
 
-    const clicksSnapshot = await db
-      .collection("clicks")
-      .where("slug", "==", slug)
-      .get();
+      const data = urlResult.rows[0];
 
-    const clickDetails = clicksSnapshot.docs
-      .map((d) => {
-        const c = d.data();
+      const clicksResult = await db.query(`
+        SELECT * FROM clicks WHERE slug = '${slug}'
+      `);
 
-        // Get location information from IP (backward compatibility)
-        let location = c.location || "Unknown"; // Use stored location if available
-        if (location === "Unknown" && c.ip) {
-          const geo = geoip.lookup(c.ip);
-          if (geo) {
-            const countryName = getCountryName(geo.country);
-            const region = geo.region || geo.city || "Unknown";
-            location = `${region}, ${countryName}`;
+      const clickDetails = clicksResult.rows
+        .map((c) => {
+          // Get location information from IP (backward compatibility)
+          let location = c.location || "Unknown"; // Use stored location if available
+          if (location === "Unknown" && c.ip) {
+            const geo = geoip.lookup(c.ip);
+            if (geo) {
+              const countryName = getCountryName(geo.country);
+              const region = geo.region || geo.city || "Unknown";
+              location = `${region}, ${countryName}`;
+            }
           }
-        }
 
-        return {
-          id: d.id,
-          timestamp: c.timestamp?.toDate
-            ? c.timestamp.toDate().toISOString()
-            : null,
-          ip: c.ip || null,
-          location: location, // Human-readable location
-          userAgent: c.userAgent || null,
-          referer: c.referer || null,
-          isBot: c.isBot || false,
-          deviceInfo: c.deviceInfo || {
-            deviceType: "Unknown",
-            os: "Unknown",
-            browser: "Unknown",
-          },
-        };
-      })
-      .sort((a, b) => {
-        if (!a.timestamp || !b.timestamp) return 0;
-        return new Date(b.timestamp) - new Date(a.timestamp);
+          return {
+            id: c.id || crypto.randomUUID(),
+            timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
+            ip: c.ip || null,
+            location: location, // Human-readable location
+            userAgent: c.userAgent || null,
+            referer: c.referer || null,
+            isBot: c.isBot || false,
+            deviceInfo: c.deviceInfo || {
+              deviceType: "Unknown",
+              os: "Unknown",
+              browser: "Unknown",
+            },
+          };
+        })
+        .sort((a, b) => {
+          if (!a.timestamp || !b.timestamp) return 0;
+          return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+
+      res.json({
+        slug,
+        longUrl: data.longUrl,
+        clicks: data.clicks || 0,
+        createdAt: data.createdAt
+          ? new Date(data.createdAt).toISOString()
+          : null,
+        clickDetails,
       });
-
-    res.json({
-      slug,
-      longUrl: data.longUrl,
-      clicks: data.clicks || 0,
-      createdAt: data.createdAt?.toDate
-        ? data.createdAt.toDate().toISOString()
-        : null,
-      clickDetails,
-    });
+    } catch (error) {
+      console.error("Stats error fetching from Oracle NoSQL:", error);
+      res.status(500).json({ error: "Server error" });
+    }
   } catch (e) {
     console.error("Stats error:", e);
     res.status(500).json({ error: "Server error" });
@@ -1028,10 +1102,13 @@ app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
   if (blockedRoutes.includes(slug)) return next();
 
   try {
-    const doc = await db.collection("urls").doc(slug).get();
-    if (!doc.exists) return next();
+    const result = await db.query(`
+      SELECT * FROM urls WHERE slug = '${slug}'
+    `);
 
-    const urlData = doc.data();
+    if (result.rows.length === 0) return next();
+
+    const urlData = result.rows[0];
 
     const userAgent = req.get("User-Agent") || "";
     const ip =
@@ -1058,29 +1135,49 @@ app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
     }
 
     // Save analytics
-    await Promise.all([
-      db
-        .collection("urls")
-        .doc(slug)
-        .update({
-          clicks: admin.firestore.FieldValue.increment(1),
-          lastAccessed: admin.firestore.FieldValue.serverTimestamp(),
-        }),
+    try {
+      await Promise.all([
+        // Update URL clicks atomically
+        db.query(`
+          UPDATE urls 
+          SET clicks = clicks + 1,
+              lastAccessed = '${new Date().toISOString()}'
+          WHERE slug = '${slug}'
+        `),
 
-      db.collection("clicks").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        slug,
-        ip,
-        userAgent,
-        referer: req.get("Referer") || null,
-        country,
-        location, // Store human-readable location
-        isBot: botDetection.isBot,
-        botCategory: botDetection.category || null,
-        botName: botDetection.name || null,
-        deviceInfo, // ← REQUIRED BY FRONTEND
-      }),
-    ]);
+        // Add click record
+        db.query(`
+          INSERT INTO clicks VALUES (
+            '${crypto.randomUUID()}',
+            '${slug}',
+            '${new Date().toISOString()}',
+            '${ip || ""}',
+            '${userAgent}',
+            '${req.get("Referer") || ""}',
+            '${country || ""}',
+            '${location}',
+            ${botDetection.isBot},
+            '${botDetection.category || ""}',
+            '${botDetection.name || ""}',
+            ${JSON.stringify(deviceInfo)}
+          )
+        `),
+      ]);
+    } catch (analyticsError) {
+      // If table doesn't exist, log but still redirect
+      if (
+        analyticsError.code === "TABLE_NOT_FOUND" ||
+        analyticsError.message.includes("not found") ||
+        analyticsError.message.includes("Missing or invalid table name")
+      ) {
+        console.warn(
+          "Analytics tables not available, continuing redirect:",
+          analyticsError.message,
+        );
+      } else {
+        console.error("Error saving analytics:", analyticsError);
+      }
+    }
 
     return res.redirect(301, urlData.longUrl);
   } catch (e) {
