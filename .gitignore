@@ -63,4 +63,3 @@ temp/
 
 # Private keys
 *.pem
-server/oracle_key.pem

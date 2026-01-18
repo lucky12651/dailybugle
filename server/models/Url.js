@@ -1,18 +1,25 @@
 const db = require("../oracleNosql");
 
 class UrlModel {
+  static _mapRow(row) {
+    if (!row) return null;
+    return {
+      slug: row.slug,
+      longUrl: row.long_url,
+      clicks: row.clicks,
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+      updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+      lastAccessed: row.last_accessed ? new Date(row.last_accessed).toISOString() : null,
+    };
+  }
+
   static async create({ slug, longUrl }) {
     try {
       const now = new Date().toISOString();
-      await db.query(`
-        INSERT INTO urls VALUES (
-          '${slug}',
-          '${longUrl}',
-          0,
-          '${now}',
-          '${now}'
-        )
-      `);
+      await db.query(
+        `INSERT INTO urls (slug, long_url, clicks, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`,
+        [slug, longUrl, 0, now, now],
+      );
 
       return { slug, longUrl, clicks: 0, createdAt: now, updatedAt: now };
     } catch (error) {
@@ -22,11 +29,8 @@ class UrlModel {
 
   static async findBySlug(slug) {
     try {
-      const result = await db.query(`
-        SELECT * FROM urls WHERE slug = '${slug}'
-      `);
-
-      return result.rows.length > 0 ? result.rows[0] : null;
+      const result = await db.query(`SELECT * FROM urls WHERE slug = $1`, [slug]);
+      return UrlModel._mapRow(result.rows[0]);
     } catch (error) {
       throw error;
     }
@@ -34,19 +38,24 @@ class UrlModel {
 
   static async findAll(options = {}) {
     try {
-      const {
-        limit = 20,
-        orderBy = "createdAt",
-        orderDirection = "DESC",
-      } = options;
+      const { limit = 20, orderBy = "createdAt", orderDirection = "DESC" } = options;
 
-      const result = await db.query(`
-        SELECT * FROM urls
-        ORDER BY ${orderBy} ${orderDirection}
-        LIMIT ${limit}
-      `);
+      // Sanitize order values to prevent SQL injection
+      const allowedOrder = {
+        createdAt: "created_at",
+        updatedAt: "updated_at",
+        clicks: "clicks",
+        slug: "slug",
+      };
+      const order = allowedOrder[orderBy] || "created_at";
+      const dir = orderDirection.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-      return result.rows;
+      const result = await db.query(
+        `SELECT * FROM urls ORDER BY ${order} ${dir} LIMIT $1`,
+        [limit],
+      );
+
+      return result.rows.map(UrlModel._mapRow);
     } catch (error) {
       throw error;
     }
@@ -55,12 +64,10 @@ class UrlModel {
   static async incrementClicks(slug) {
     try {
       const now = new Date().toISOString();
-      await db.query(`
-        UPDATE urls 
-        SET clicks = clicks + 1,
-            lastAccessed = '${now}'
-        WHERE slug = '${slug}'
-      `);
+      await db.query(
+        `UPDATE urls SET clicks = clicks + 1, last_accessed = $2 WHERE slug = $1`,
+        [slug, now],
+      );
     } catch (error) {
       throw error;
     }
@@ -68,17 +75,11 @@ class UrlModel {
 
   static async exists(slug) {
     try {
-      const result = await db.query(`
-        SELECT 1 FROM urls WHERE slug = '${slug}'
-      `);
-
+      const result = await db.query(`SELECT 1 FROM urls WHERE slug = $1`, [slug]);
       return result.rows.length > 0;
     } catch (error) {
-      // If table doesn't exist, assume URL doesn't exist
-      if (
-        error.code === "TABLE_NOT_FOUND" ||
-        error.message.includes("not found")
-      ) {
+      // Postgres undefined_table error code is 42P01
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
         return false;
       }
       throw error;

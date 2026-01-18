@@ -5,14 +5,14 @@ const router = express.Router();
 // Health check endpoint
 router.get("/", async (req, res) => {
   try {
-    // Test Oracle NoSQL connection
-    const result = await db.query("SELECT COUNT(*) FROM urls");
+    // Test DB connection
+    const result = await db.query("SELECT COUNT(*)::int AS count FROM urls");
 
     res.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
-      oracle_nosql: "connected",
-      count: result.rows[0]["COUNT(*)"],
+      postgres: "connected",
+      count: result.rows[0].count || 0,
       environment: {
         BASE_URL: process.env.BASE_URL || "NOT SET",
         NODE_ENV: process.env.NODE_ENV || "NOT SET",
@@ -21,14 +21,11 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     // If table doesn't exist yet, consider it healthy since we can connect
-    if (
-      error.code === "TABLE_NOT_FOUND" ||
-      error.message.includes("not found")
-    ) {
+    if (error.code === "42P01" || error.message.includes("does not exist")) {
       res.json({
         status: "healthy",
         timestamp: new Date().toISOString(),
-        oracle_nosql: "connected",
+        postgres: "connected",
         count: 0,
         environment: {
           BASE_URL: process.env.BASE_URL || "NOT SET",

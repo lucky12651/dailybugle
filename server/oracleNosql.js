@@ -1,16 +1,18 @@
 require("dotenv").config();
-const nosqldb = require("oracle-nosqldb");
+const { Pool } = require("pg");
 
-const client = new nosqldb.NoSQLClient({
-  region: process.env.OCI_REGION,
-  auth: {
-    iam: {
-      tenantId: process.env.OCI_TENANCY_OCID,
-      userId: process.env.OCI_USER_OCID,
-      fingerprint: process.env.OCI_FINGERPRINT,
-      privateKeyFile: process.env.OCI_PRIVATE_KEY_PATH,
-    },
-  },
+const pool = new Pool({
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  max: 10,
+  idleTimeoutMillis: 30000,
 });
 
-module.exports = client;
+// Simple query wrapper to keep compatibility with previous db.query usage
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+  pool,
+};

@@ -11,19 +11,17 @@ console.log("1. Environment Variables Check:");
 console.log("   BASE_URL:", process.env.BASE_URL || "NOT SET");
 console.log("   PORT:", process.env.PORT || "NOT SET (default: 3000)");
 console.log("   NODE_ENV:", process.env.NODE_ENV || "NOT SET");
-console.log("   OCI_REGION:", process.env.OCI_REGION || "NOT SET");
-console.log(
-  "   OCI_TENANCY_OCID:",
-  process.env.OCI_TENANCY_OCID ? "SET" : "NOT SET",
-);
+console.log("   DB_HOST:", process.env.DB_HOST || "NOT SET");
+console.log("   DB_PORT:", process.env.DB_PORT || "NOT SET");
+console.log("   DB_NAME:", process.env.DB_NAME || "NOT SET");
+console.log("   DB_USER:", process.env.DB_USER ? "SET" : "NOT SET");
 
 console.log("");
 
 // Check required files
 console.log("2. File System Check:");
 
-const requiredFiles = ["./oracle_key.pem", "./.env", "./package.json"];
-
+const requiredFiles = ["./.env", "./package.json"];
 requiredFiles.forEach((file) => {
   const fullPath = path.resolve(file);
   try {

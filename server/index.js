@@ -6,22 +6,20 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 const UrlService = require("./services/urlService");
 
-// Oracle NoSQL connection established via require('./oracleNosql')
-console.log("Oracle NoSQL client initialized successfully");
+// PostgreSQL client established via require('./oracleNosql')
+console.log("Postgres client initialized successfully");
 
-// Skip table creation - assume tables exist (created manually in Oracle Cloud Console)
+// Check basic connectivity - do not auto-create tables here. Use initDb.js to create schema.
 async function initializeTables() {
   try {
-    // Just log that we expect tables to exist
-    console.log(
-      "Oracle NoSQL client initialized - expecting tables to exist in Oracle Cloud Console",
-    );
+    await require("./oracleNosql").query("SELECT 1");
+    console.log("Postgres connectivity verified - expecting tables to exist or run initDb.js to create them");
   } catch (error) {
-    // For Oracle NoSQL Cloud Always Free tier, tables need to be created via console first
     console.warn("=== DATABASE SETUP REQUIRED ===");
     console.warn(
-      "Oracle NoSQL tables not found. Please create them in Oracle Cloud Console:",
+      "Could not connect to Postgres or tables are missing. Run node initDb.js to create the required tables.",
     );
+    console.warn("Error:", error.message);
   }
 }
 
