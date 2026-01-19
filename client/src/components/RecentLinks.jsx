@@ -61,7 +61,7 @@ const RecentLinks = ({
                       </a>
                     </div>
                     <div className="flex-shrink-0">
-                      <span className="inline-flex items-center text-[10px] sm:text-xs font-medium text-black-600 bg-green-200 px-2 py-1 rounded-full">
+                      <span className="inline-flex items-center text-[10px] sm:text-s font-bold text-black-600 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-full">
                         {link.clicks}
                       </span>
                     </div>
