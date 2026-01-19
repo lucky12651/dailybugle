@@ -21,32 +21,36 @@ const RecentLinks = ({
   };
 
   const displayedLinks = searchResults !== null ? searchResults : recentLinks;
+
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Recent Links</h2>
-      <div className="mb-4 flex gap-2">
+      
+      {/* Responsive Search Container */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-3">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search coded URL"
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500"
+          className="w-full sm:flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 placeholder-gray-500 shadow-sm"
         />
         <button
           onClick={handleSearch}
-          className="px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+          className="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-md"
         >
           Search
         </button>
       </div>
+
       {displayedLinks.length > 0 ? (
-        <div className="bg-gray-50 rounded-xl max-h-[300px] overflow-y-auto">
+        <div className="bg-gray-50 rounded-xl max-h-[400px] overflow-y-auto border border-gray-100">
           <ul className="divide-y divide-gray-200">
             {displayedLinks.map((link, index) => (
               <li key={link.slug}>
-                <div className="px-6 py-4 hover:bg-gray-100 transition-colors duration-150">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-blue-600 truncate hover:text-blue-800 transition-colors duration-150">
+                <div className="px-4 py-4 sm:px-6 hover:bg-gray-100 transition-colors duration-150">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold text-blue-600 truncate hover:text-blue-800">
                       <a
                         href={`/${link.slug}`}
                         target="_blank"
@@ -56,15 +60,16 @@ const RecentLinks = ({
                         {link.shortUrl}
                       </a>
                     </div>
-                    <div className="ml-2 flex-shrink-0 flex">
-                      <span className="inline-flex items-center text-xs font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
+                    <div className="flex-shrink-0">
+                      <span className="inline-flex items-center text-[10px] sm:text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded-full">
                         {link.clicks} clicks
                       </span>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-between items-center">
-                    <div className="text-sm text-gray-600 truncate max-w-xs">
-                      Original: {link.longUrl}
+                  
+                  <div className="mt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div className="text-xs sm:text-sm text-gray-500 truncate max-w-full sm:max-w-xs">
+                      <span className="font-semibold text-gray-400">Original:</span> {link.longUrl}
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -75,13 +80,13 @@ const RecentLinks = ({
                             setTimeout(() => setCopiedIndex(null), 2000);
                           }
                         }}
-                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors duration-200"
+                        className="flex-1 sm:flex-none justify-center inline-flex items-center px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors"
                       >
                         {copiedIndex === index ? "Copied!" : "Copy"}
                       </button>
                       <button
                         onClick={() => fetchStats(link.slug)}
-                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-purple-700 bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+                        className="flex-1 sm:flex-none justify-center inline-flex items-center px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-purple-700 bg-purple-100 hover:bg-purple-200 transition-colors"
                       >
                         Stats
                       </button>
@@ -93,9 +98,9 @@ const RecentLinks = ({
           </ul>
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
           <p className="text-gray-500">
-            {searchResults !== null ? "No results" : "No recent links yet"}
+            {searchResults !== null ? "No results found" : "No recent links yet"}
           </p>
         </div>
       )}
