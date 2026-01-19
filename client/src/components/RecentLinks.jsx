@@ -61,8 +61,8 @@ const RecentLinks = ({
                       </a>
                     </div>
                     <div className="flex-shrink-0">
-                      <span className="inline-flex items-center text-[10px] sm:text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded-full">
-                        {link.clicks} clicks
+                      <span className="inline-flex items-center text-[10px] sm:text-xs font-medium text-black-600 bg-green-200 px-2 py-1 rounded-full">
+                        {link.clicks}
                       </span>
                     </div>
                   </div>
