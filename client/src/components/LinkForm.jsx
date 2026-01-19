@@ -63,7 +63,7 @@ const LinkForm = ({
             disabled={loading}
             className="flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Processing..." : "Get your link for free →"}
+            {loading ? "Processing..." : "Get your link →"}
           </button>
         </div>
       </form>
