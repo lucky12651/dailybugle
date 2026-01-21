@@ -76,7 +76,9 @@ class ClickModel {
 
   static async findBySlug(slug) {
     try {
-      const result = await db.query(`SELECT * FROM clicks WHERE slug = $1`, [slug]);
+      const result = await db.query(`SELECT * FROM clicks WHERE slug = $1`, [
+        slug,
+      ]);
       return result.rows.map(ClickModel._mapRow);
     } catch (error) {
       throw error;
@@ -132,7 +134,9 @@ class ClickModel {
         }
       });
 
-      const sortedEntries = Object.entries(deviceCount).sort((a, b) => b[1] - a[1]);
+      const sortedEntries = Object.entries(deviceCount).sort(
+        (a, b) => b[1] - a[1],
+      );
 
       let topEntries = sortedEntries.slice(0, 7);
       let othersCount = 0;
@@ -184,7 +188,9 @@ class ClickModel {
         referrerCount[cleanReferrer] = (referrerCount[cleanReferrer] || 0) + 1;
       });
 
-      const sortedEntries = Object.entries(referrerCount).sort((a, b) => b[1] - a[1]);
+      const sortedEntries = Object.entries(referrerCount).sort(
+        (a, b) => b[1] - a[1],
+      );
 
       let topEntries = sortedEntries.slice(0, 5);
       let othersCount = 0;
@@ -270,6 +276,34 @@ class ClickModel {
       const clicks = await this.findBySlug(slug);
 
       const now = new Date();
+      const locale = "en-IN";
+      const timeZone = "Asia/Kolkata";
+      const hourFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        hour12: false,
+      });
+      const dayFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const hourKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          hourFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:00:00`;
+      };
+      const dayKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          dayFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}`;
+      };
       let cutoffDate;
 
       switch (period) {
@@ -281,6 +315,9 @@ class ClickModel {
           break;
         case "7d":
           cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "45d":
+          cutoffDate = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
           break;
         case "30d":
           cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -297,9 +334,9 @@ class ClickModel {
             let timeKey;
 
             if (period === "24h") {
-              timeKey = clickTime.toISOString().slice(0, 13) + ":00:00";
+              timeKey = hourKeyFromDate(clickTime);
             } else {
-              timeKey = clickTime.toISOString().slice(0, 10);
+              timeKey = dayKeyFromDate(clickTime);
             }
 
             clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
@@ -313,21 +350,36 @@ class ClickModel {
       if (period === "24h") {
         for (let i = 23; i >= 0; i--) {
           const hourTime = new Date(now.getTime() - i * 60 * 60 * 1000);
-          const hourKey = hourTime.toISOString().slice(0, 13) + ":00:00";
+          const hourKey = hourKeyFromDate(hourTime);
           timeLabels.push(
-            hourTime.toLocaleTimeString([], {
+            hourTime.toLocaleTimeString("en-IN", {
+              timeZone,
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             }),
           );
           clickCounts.push(clicksByTime[hourKey] || 0);
         }
       } else {
-        const days = period === "3d" ? 3 : period === "7d" ? 7 : 30;
+        const days =
+          period === "3d"
+            ? 3
+            : period === "7d"
+              ? 7
+              : period === "45d"
+                ? 45
+                : 30;
         for (let i = days - 1; i >= 0; i--) {
           const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-          const dayKey = dayTime.toISOString().slice(0, 10);
-          timeLabels.push(dayTime.toLocaleDateString());
+          const dayKey = dayKeyFromDate(dayTime);
+          timeLabels.push(
+            dayTime.toLocaleDateString("en-IN", {
+              timeZone,
+              day: "2-digit",
+              month: "short",
+            }),
+          );
           clickCounts.push(clicksByTime[dayKey] || 0);
         }
       }
@@ -356,7 +408,9 @@ class ClickModel {
         }
       });
 
-      const sortedEntries = Object.entries(locationCount).sort((a, b) => b[1] - a[1]);
+      const sortedEntries = Object.entries(locationCount).sort(
+        (a, b) => b[1] - a[1],
+      );
 
       let topEntries = sortedEntries.slice(0, 3);
       let othersCount = 0;
