@@ -3,6 +3,7 @@ import { fetchTrafficStats } from "../helpers/apiHelpers";
 import {
   renderTrafficChart,
   renderReferrerDistributionChart,
+  renderDailyViewsBarChart,
 } from "../helpers/chartHelpers";
 
 const StatsModal = ({
@@ -20,6 +21,8 @@ const StatsModal = ({
   const [trafficData, setTrafficData] = useState(null);
   const [trafficPeriod, setTrafficPeriod] = useState("7d");
   const [loadingTraffic, setLoadingTraffic] = useState(false);
+  const [dailyTrafficData, setDailyTrafficData] = useState(null);
+  const [loadingDailyTraffic, setLoadingDailyTraffic] = useState(false);
 
   // Fetch traffic data when modal opens or period changes
   useEffect(() => {
@@ -27,6 +30,11 @@ const StatsModal = ({
       fetchTrafficData();
     }
   }, [showStats, slug, trafficPeriod]);
+  useEffect(() => {
+    if (showStats && slug) {
+      fetchDailyTrafficData();
+    }
+  }, [showStats, slug]);
 
   // Render traffic chart when data changes
   useEffect(() => {
@@ -42,6 +50,12 @@ const StatsModal = ({
     }
   }, [referrerChartData]);
 
+  useEffect(() => {
+    if (dailyTrafficData) {
+      renderDailyViewsBarChart("dailyViewsChart", dailyTrafficData);
+    }
+  }, [dailyTrafficData]);
+
   const fetchTrafficData = async () => {
     setLoadingTraffic(true);
     const result = await fetchTrafficStats(slug, trafficPeriod);
@@ -49,6 +63,14 @@ const StatsModal = ({
       setTrafficData(result.data);
     }
     setLoadingTraffic(false);
+  };
+  const fetchDailyTrafficData = async () => {
+    setLoadingDailyTraffic(true);
+    const result = await fetchTrafficStats(slug, "45d");
+    if (result.success) {
+      setDailyTrafficData(result.data);
+    }
+    setLoadingDailyTraffic(false);
   };
   return (
     showStats && (
@@ -85,7 +107,12 @@ const StatsModal = ({
                     <p className="text-sm text-blue-700">Created</p>
                     <p className="text-sm text-blue-800">
                       {statsData.createdAt
-                        ? new Date(statsData.createdAt).toLocaleString()
+                        ? new Date(statsData.createdAt).toLocaleString(
+                            "en-IN",
+                            {
+                              timeZone: "Asia/Kolkata",
+                            },
+                          )
                         : "N/A"}
                     </p>
                   </div>
@@ -146,6 +173,42 @@ const StatsModal = ({
                       ) : (
                         <div className="flex items-center justify-center h-full text-gray-500">
                           No traffic data available
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1">
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-xl border border-indigo-100 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+                        Views Per Day (IST)
+                      </h4>
+                    </div>
+                    <div className="h-64">
+                      {loadingDailyTraffic ? (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
+                      ) : dailyTrafficData ? (
+                        <>
+                          <div className="mb-2 text-center">
+                            <span className="text-2xl font-bold text-blue-600">
+                              {dailyTrafficData.total}
+                            </span>
+                            <span className="text-gray-600 ml-2">
+                              total views (last 45 days)
+                            </span>
+                          </div>
+                          <canvas
+                            id="dailyViewsChart"
+                            width="400"
+                            height="200"
+                          ></canvas>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500">
+                          No daily views data available
                         </div>
                       )}
                     </div>
@@ -337,7 +400,10 @@ const StatsModal = ({
                             <tr key={idx}>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                                 {click.timestamp
-                                  ? new Date(click.timestamp).toLocaleString()
+                                  ? new Date(click.timestamp).toLocaleString(
+                                      "en-IN",
+                                      { timeZone: "Asia/Kolkata" },
+                                    )
                                   : "N/A"}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">

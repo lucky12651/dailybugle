@@ -425,6 +425,94 @@ export const renderReferrerDistributionChart = (canvasId, chartData) => {
   renderConsistentDoughnutChart(canvasId, chartData, ["By", "Referrer"]);
 };
 
+export const renderDailyViewsBarChart = (canvasId, chartData) => {
+  if (!chartData) return;
+  const existingChart = ChartJS.getChart(canvasId);
+  if (existingChart) {
+    existingChart.destroy();
+  }
+  const ctx = document.getElementById(canvasId)?.getContext("2d");
+  if (ctx) {
+    new ChartJS(ctx, {
+      type: "bar",
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: "Views/Day",
+            data: chartData.data,
+            backgroundColor: "rgba(59, 130, 246, 0.3)",
+            borderColor: "#3B82F6",
+            borderWidth: 1.5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: "#E5E7EB",
+            },
+            ticks: {
+              color: "#6B7280",
+              font: { size: 12 },
+              callback: function (value) {
+                return Number.isInteger(value) ? value : value.toFixed(0);
+              },
+            },
+          },
+          x: {
+            grid: {
+              color: "#E5E7EB",
+            },
+            ticks: {
+              color: "#6B7280",
+              font: { size: 11 },
+              maxRotation: 45,
+              minRotation: 45,
+            },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "#374151",
+            titleColor: "#F9FAFB",
+            bodyColor: "#D1D5DB",
+            borderColor: "#4B5563",
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: function (context) {
+                const views = Number.isInteger(context.parsed.y)
+                  ? context.parsed.y
+                  : Math.round(context.parsed.y);
+                return `Views: ${views}`;
+              },
+            },
+          },
+          datalabels: {
+            display: true,
+            color: "#374151",
+            font: {
+              size: 11,
+            },
+            anchor: "end",
+            align: "top",
+            formatter: function (value) {
+              if (!value || value <= 0) return "";
+              return value;
+            },
+          },
+        },
+      },
+    });
+  }
+};
+
 // Bot vs Human Traffic Chart
 export const renderTrafficTypeChart = (canvasId, chartData) => {
   renderConsistentDoughnutChart(canvasId, chartData, [
