@@ -24,7 +24,7 @@ class UrlService {
       return {
         slug: urlData.slug,
         longUrl: urlData.longUrl,
-        shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${
+        shortUrl: `${process.env.BASE_URL || "http://localhost:3000"}/${
           urlData.slug
         }`,
       };
@@ -98,7 +98,7 @@ class UrlService {
         slug: data.slug,
         longUrl: data.longUrl,
         clicks: data.clicks || 0,
-        shortUrl: `${process.env.BASE_URL || "https://dailybugle.tech"}/${
+        shortUrl: `${process.env.BASE_URL || "http://localhost:3000"}/${
           data.slug
         }`,
         createdAt: data.createdAt
