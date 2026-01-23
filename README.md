@@ -1,6 +1,6 @@
 # URL Shortener Application
 
-A full-stack URL shortener application built with Node.js, React, and Firebase Firestore.
+A full-stack URL shortener application built with Node.js, React, and postgresql Firestore.
 
 ## Features
 
@@ -14,9 +14,9 @@ A full-stack URL shortener application built with Node.js, React, and Firebase F
 ## Tech Stack
 
 - **Backend**: Node.js, Express.js
-- **Database**: Firebase Firestore
+- **Database**: postgresql Firestore
 - **Frontend**: React, Vite, Tailwind CSS
-- **Authentication**: Firebase Admin SDK
+- **Authentication**: postgresql Admin SDK
 
 ## Firestore Data Model
 
@@ -39,7 +39,7 @@ The document ID serves as the slug for the short URL.
 
 - Node.js (v14 or higher)
 - npm or yarn
-- Firebase project with Firestore enabled
+- postgresql project with Firestore enabled
 
 ### Backend Setup
 
@@ -55,18 +55,18 @@ The document ID serves as the slug for the short URL.
    npm install
    ```
 
-3. Set up Firebase:
+3. Set up postgresql:
 
-   - Follow the instructions in `FIREBASE_SETUP.md` to create a Firebase project
-   - Download the service account key as `firebaseServiceAccount.json`
+   - Follow the instructions in `postgresql_SETUP.md` to create a postgresql project
+   - Download the service account key as `postgresqlServiceAccount.json`
    - Add the file to the `server` directory
    - Add to `.gitignore` for security
 
 4. Create a `.env` file in the `server` directory:
 
    ```
-   GOOGLE_APPLICATION_CREDENTIALS="./firebaseServiceAccount.json"
-   FIRESTORE_DATABASE_URL="https://your-project-id.firebaseio.com"
+   GOOGLE_APPLICATION_CREDENTIALS="./postgresqlServiceAccount.json"
+   FIRESTORE_DATABASE_URL="https://your-project-id.postgresqlio.com"
    PORT=3000
    BASE_URL=http://localhost:3000
    ```
@@ -106,8 +106,8 @@ The document ID serves as the slug for the short URL.
 
 **Server (.env)**:
 
-- `GOOGLE_APPLICATION_CREDENTIALS` - Path to Firebase service account file
-- `FIRESTORE_DATABASE_URL` - Firebase database URL
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to postgresql service account file
+- `FIRESTORE_DATABASE_URL` - postgresql database URL
 - `PORT` - Server port (default: 3000)
 - `BASE_URL` - Base URL for short URLs
 
