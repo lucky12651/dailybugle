@@ -1,4 +1,4 @@
-const db = require("../oracleNosql");
+const db = require("../postgresql");
 const crypto = require("crypto");
 
 class ClickModel {

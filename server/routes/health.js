@@ -1,5 +1,5 @@
 const express = require("express");
-const db = require("../oracleNosql");
+const db = require("../postgresql");
 const router = express.Router();
 
 // Health check endpoint

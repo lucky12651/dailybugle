@@ -1,5 +1,5 @@
 require('dotenv').config();
-const db = require('./oracleNosql');
+const db = require('./postgresql');
 
 async function init() {
   try {
