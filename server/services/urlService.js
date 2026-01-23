@@ -6,6 +6,14 @@ const {
   parseDeviceInfoFromUA,
 } = require("./helperService");
 const geoip = require("geoip-lite");
+const crypto = require("crypto");
+
+// Ensure BASE_URL is defined
+if (!process.env.BASE_URL) {
+  throw new Error("BASE_URL is not defined in environment variables");
+}
+
+const BASE_URL = process.env.BASE_URL;
 
 class UrlService {
   static async shortenUrl({ longUrl, customSlug }) {
@@ -24,9 +32,7 @@ class UrlService {
       return {
         slug: urlData.slug,
         longUrl: urlData.longUrl,
-        shortUrl: `${process.env.BASE_URL || "http://localhost:3000"}/${
-          urlData.slug
-        }`,
+        shortUrl: `${BASE_URL}/${urlData.slug}`,
       };
     } catch (error) {
       throw error;
@@ -42,11 +48,10 @@ class UrlService {
 
       const clickDetails = await ClickModel.findBySlug(slug);
 
-      // Process click details with location information
       const processedClicks = clickDetails
         .map((c) => {
-          // Get location information from IP (backward compatibility)
-          let location = c.location || "Unknown"; // Use stored location if available
+          let location = c.location || "Unknown";
+
           if (location === "Unknown" && c.ip) {
             const geo = geoip.lookup(c.ip);
             if (geo) {
@@ -58,9 +63,11 @@ class UrlService {
 
           return {
             id: c.id || crypto.randomUUID(),
-            timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
+            timestamp: c.timestamp
+              ? new Date(c.timestamp).toISOString()
+              : null,
             ip: c.ip || null,
-            location: location, // Human-readable location
+            location,
             userAgent: c.userAgent || null,
             referer: c.referer || null,
             isBot: c.isBot || false,
@@ -98,9 +105,7 @@ class UrlService {
         slug: data.slug,
         longUrl: data.longUrl,
         clicks: data.clicks || 0,
-        shortUrl: `${process.env.BASE_URL || "http://localhost:3000"}/${
-          data.slug
-        }`,
+        shortUrl: `${BASE_URL}/${data.slug}`,
         createdAt: data.createdAt
           ? new Date(data.createdAt).toISOString()
           : null,
@@ -114,27 +119,25 @@ class UrlService {
     try {
       const urlData = await UrlModel.findBySlug(slug);
       if (!urlData) {
-        return null; // Indicate that URL was not found
+        return null;
       }
 
-      // Extract request information
       const userAgent = req.get("User-Agent") || "";
-      const ip =
+      let ip =
         req.ip ||
-        req.connection.remoteAddress ||
-        req.socket.remoteAddress ||
+        req.connection?.remoteAddress ||
+        req.socket?.remoteAddress ||
         null;
+
+      if (ip && ip.includes("::ffff:")) {
+        ip = ip.replace("::ffff:", "");
+      }
 
       const deviceInfo = parseDeviceInfoFromUA(userAgent);
       const botDetection = detectBot(userAgent);
-      let cleanIP = ip;
-      if (cleanIP && cleanIP.includes("::ffff:")) {
-        cleanIP = cleanIP.replace("::ffff:", "");
-      }
-      const geo = geoip.lookup(cleanIP);
+      const geo = geoip.lookup(ip);
       const country = geo ? geo.country : null;
 
-      // Compute human-readable location
       let location = "Unknown";
       if (geo) {
         const countryName = ClickModel.getCountryName(geo.country);
@@ -142,12 +145,11 @@ class UrlService {
         location = `${region}, ${countryName}`;
       }
 
-      // Increment click count and save analytics
       await Promise.all([
         UrlModel.incrementClicks(slug),
         ClickModel.create({
           slug,
-          ip: cleanIP,
+          ip,
           userAgent,
           referer: req.get("Referer") || "",
           country,
