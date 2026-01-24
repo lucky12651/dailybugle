@@ -182,42 +182,40 @@ const App = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-gray-800 font-sans">
       <Header />
       <main className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
-        <div className="w-full max-w-2xl">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-8">
-            {/* Tabs */}
-            <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-            {/* Conditional Content based on active tab */}
-            {activeTab === "link" ? (
-              <LinkForm
-                longUrl={longUrl}
-                setLongUrl={setLongUrl}
-                customSlug={customSlug}
-                setCustomSlug={setCustomSlug}
-                loading={loading}
-                handleSubmit={handleSubmit}
-                error={error}
-                shortUrl={shortUrl}
-                copiedIndex={copiedIndex}
-                setCopiedIndex={setCopiedIndex}
-                copyToClipboard={copyToClipboard}
-              />
-            ) : (
-              <QRCodeGenerator
-                qrUrl={qrUrl}
-                setQrUrl={setQrUrl}
-                downloadQRCode={downloadQRCode}
-              />
-            )}
+        <div className="w-full max-w-6xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+              <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+              {activeTab === "link" ? (
+                <LinkForm
+                  longUrl={longUrl}
+                  setLongUrl={setLongUrl}
+                  customSlug={customSlug}
+                  setCustomSlug={setCustomSlug}
+                  loading={loading}
+                  handleSubmit={handleSubmit}
+                  error={error}
+                  shortUrl={shortUrl}
+                  copiedIndex={copiedIndex}
+                  setCopiedIndex={setCopiedIndex}
+                  copyToClipboard={copyToClipboard}
+                />
+              ) : (
+                <QRCodeGenerator
+                  qrUrl={qrUrl}
+                  setQrUrl={setQrUrl}
+                  downloadQRCode={downloadQRCode}
+                />
+              )}
+            </div>
+            <RecentLinks
+              recentLinks={recentLinks}
+              copiedIndex={copiedIndex}
+              setCopiedIndex={setCopiedIndex}
+              copyToClipboard={copyToClipboard}
+              fetchStats={fetchStats}
+            />
           </div>
-
-          <RecentLinks
-            recentLinks={recentLinks}
-            copiedIndex={copiedIndex}
-            setCopiedIndex={setCopiedIndex}
-            copyToClipboard={copyToClipboard}
-            fetchStats={fetchStats}
-          />
         </div>
       </main>
 
