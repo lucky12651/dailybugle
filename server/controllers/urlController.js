@@ -43,11 +43,11 @@ const urlController = {
         error.message.includes("not found")
       ) {
         console.error(
-          "URLs table does not exist. Please create the tables in Oracle NoSQL Cloud console first.",
+          "URLs table does not exist. Please create the tables in Postgre SQL Cloud console first.",
         );
         return res.status(503).json({
           error: "Database tables not initialized",
-          message: "Please contact administrator to create Oracle NoSQL tables",
+          message: "Please contact administrator to create Postgre SQL tables",
         });
       }
 
