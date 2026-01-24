@@ -1,18 +1,18 @@
 const express = require("express");
-const db = require("./oracleNosql");
+const db = require("./postgresql");
 require("dotenv").config();
 const cors = require("cors");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 const UrlService = require("./services/urlService");
 
-// PostgreSQL client established via require('./oracleNosql')
+// PostgreSQL client established via require('./postgresql')
 console.log("Postgres client initialized successfully");
 
 // Check basic connectivity - do not auto-create tables here. Use initDb.js to create schema.
 async function initializeTables() {
   try {
-    await require("./oracleNosql").query("SELECT 1");
+    await require("./postgresql").query("SELECT 1");
     console.log("Postgres connectivity verified - expecting tables to exist or run initDb.js to create them");
   } catch (error) {
     console.warn("=== DATABASE SETUP REQUIRED ===");

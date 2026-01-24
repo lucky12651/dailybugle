@@ -1,4 +1,4 @@
-const db = require("../oracleNosql");
+const db = require("../postgresql");
 
 class UrlModel {
   static _mapRow(row) {
