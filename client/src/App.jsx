@@ -28,6 +28,7 @@ import Tabs from "./components/Tabs";
 import LinkForm from "./components/LinkForm";
 import QRCodeGenerator from "./components/QRCodeGenerator";
 import RecentLinks from "./components/RecentLinks";
+import Settings from "./components/Settings";
 import StatsModal from "./components/StatsModal";
 import Login from "./components/Login";
 
@@ -44,6 +45,7 @@ const App = () => {
   const [loadingMoreRecentLinks, setLoadingMoreRecentLinks] = useState(false);
   const [hasMoreRecentLinks, setHasMoreRecentLinks] = useState(true);
   const RECENT_LINKS_PER_PAGE = 25;
+  const [showSettings, setShowSettings] = useState(false);
 
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [showStats, setShowStats] = useState(false);
@@ -237,17 +239,28 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-gray-800 font-sans">
       <Header />
-      <button
-        onClick={handleLogout}
-        className="absolute top-6 right-6 text-white hover:text-gray-200"
-      >
-        Logout
-      </button>
+      <div className="absolute top-6 right-6 flex gap-3">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all"
+        >
+          Settings
+        </button>
+        <button
+          onClick={handleLogout}
+          className="text-white hover:text-gray-200 font-semibold"
+        >
+          Logout
+        </button>
+      </div>
       <main className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
         <div className="w-full max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-              <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          {showSettings ? (
+            <Settings token={token} onToggle2FASetup={() => setShowSettings(false)} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+                <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
               {activeTab === "link" ? (
                 <LinkForm
                   longUrl={longUrl}
@@ -283,6 +296,7 @@ const App = () => {
               loadingMore={loadingMoreRecentLinks}
             />
           </div>
+          )}
         </div>
       </main>
 
