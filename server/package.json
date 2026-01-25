@@ -15,7 +15,9 @@
     "express-rate-limit": "^8.2.1",
     "geoip-lite": "^1.4.10",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.10.0"
+    "pg": "^8.10.0",
+    "speakeasy": "^2.0.0",
+    "qrcode": "^1.5.3"
   },
   "optionalDependencies": {
     "protobufjs": "^7.5.4"

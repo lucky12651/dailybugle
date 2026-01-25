@@ -7,6 +7,27 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 // Auth routes
 router.post("/auth/login", authController.login);
+router.get("/auth/2fa-status", authController.check2FAStatus);
+router.post("/auth/setup-2fa", authController.setup2FA);
+router.post("/auth/verify-2fa", authController.verify2FA);
+router.post("/auth/toggle-2fa-setup", authMiddleware, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    
+    await require("../postgresql").query(
+      "UPDATE settings SET setting_value = $1, updated_at = NOW() WHERE setting_key = 'allow_2fa_setup'",
+      [enabled],
+    );
+    
+    res.json({
+      message: `2FA setup ${enabled ? "enabled" : "disabled"} successfully`,
+      setupAllowed: enabled,
+    });
+  } catch (error) {
+    console.error("Toggle 2FA setup error:", error);
+    res.status(500).json({ error: "Failed to toggle 2FA setup" });
+  }
+});
 
 // URL shortening routes (Protected)
 router.post("/shorten", authMiddleware, urlController.shorten);
