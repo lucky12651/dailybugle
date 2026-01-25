@@ -31,7 +31,8 @@ async function init() {
         is_bot BOOLEAN DEFAULT false,
         bot_category TEXT,
         bot_name TEXT,
-        device_info JSONB
+        device_info JSONB,
+        user_id TEXT
       );
     `);
 

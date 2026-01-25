@@ -6,6 +6,9 @@ const RecentLinks = ({
   setCopiedIndex,
   copyToClipboard,
   fetchStats,
+  hasMore,
+  loadMore,
+  loadingMore,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searchResults, setSearchResults] = React.useState(null);
@@ -25,7 +28,7 @@ const RecentLinks = ({
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Recent Links</h2>
-      
+
       {/* Responsive Search Container */}
       <div className="mb-6 flex flex-col sm:flex-row gap-3">
         <input
@@ -44,7 +47,7 @@ const RecentLinks = ({
       </div>
 
       {displayedLinks.length > 0 ? (
-        <div className="bg-gray-50 rounded-xl max-h-[400px] overflow-y-auto border border-gray-100">
+        <div className="bg-gray-50 rounded-xl max-h-[400px] overflow-y-auto border border-gray-100 flex flex-col">
           <ul className="divide-y divide-gray-200">
             {displayedLinks.map((link, index) => (
               <li key={link.slug}>
@@ -66,10 +69,13 @@ const RecentLinks = ({
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div className="text-xs sm:text-sm text-gray-500 truncate max-w-full sm:max-w-xs">
-                      <span className="font-semibold text-gray-400">Original:</span> {link.longUrl}
+                      <span className="font-semibold text-gray-400">
+                        Original:
+                      </span>{" "}
+                      {link.longUrl}
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -96,11 +102,25 @@ const RecentLinks = ({
               </li>
             ))}
           </ul>
+          {/* Load More Button - Only show when not searching and there are more items */}
+          {hasMore && searchResults === null && (
+            <div className="p-4 flex justify-center border-t border-gray-200 bg-white sticky bottom-0">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-6 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 shadow-sm"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
           <p className="text-gray-500">
-            {searchResults !== null ? "No results found" : "No recent links yet"}
+            {searchResults !== null
+              ? "No results found"
+              : "No recent links yet"}
           </p>
         </div>
       )}

@@ -65,8 +65,10 @@ const urlController = {
   async getRecent(req, res) {
     try {
       console.log("Recent links request received");
+      const limit = parseInt(req.query.limit) || 25;
+      const offset = parseInt(req.query.offset) || 0;
 
-      const list = await UrlService.getRecentUrls(20);
+      const list = await UrlService.getRecentUrls(limit, offset);
 
       console.log("Returning", list.length, "recent links");
       res.json(list);
@@ -107,6 +109,21 @@ const urlController = {
         return res.status(404).json({ error: "URL not found" });
       }
 
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
+  // GET /api/stats/:slug/clicks
+  async getClickDetails(req, res) {
+    try {
+      const { slug } = req.params;
+      const limit = parseInt(req.query.limit) || 25;
+      const offset = parseInt(req.query.offset) || 0;
+
+      const clicks = await UrlService.getClickDetails(slug, limit, offset);
+      res.json(clicks);
+    } catch (error) {
+      console.error("Click details error:", error);
       res.status(500).json({ error: "Server error" });
     }
   },

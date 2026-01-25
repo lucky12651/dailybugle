@@ -1,7 +1,17 @@
+const getAuthHeaders = (token) => ({
+  "Content-Type": "application/json",
+  Authorization: token ? `Bearer ${token}` : "",
+});
+
 // API Helper Functions
-export const fetchRecentLinks = async () => {
+export const fetchRecentLinks = async (limit = 25, offset = 0, token) => {
   try {
-    const response = await fetch("/api/recent");
+    const response = await fetch(
+      `/api/recent?limit=${limit}&offset=${offset}`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
     if (response.ok) {
       const data = await response.json();
       return data;
@@ -13,13 +23,11 @@ export const fetchRecentLinks = async () => {
   }
 };
 
-export const shortenUrl = async (longUrl, customSlug) => {
+export const shortenUrl = async (longUrl, customSlug, token) => {
   try {
     const response = await fetch("/api/shorten", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(token),
       body: JSON.stringify({
         longUrl,
         customSlug: customSlug.trim() || undefined,
@@ -38,9 +46,11 @@ export const shortenUrl = async (longUrl, customSlug) => {
   }
 };
 
-export const fetchLinkStats = async (slug) => {
+export const fetchLinkStats = async (slug, token) => {
   try {
-    const response = await fetch(`/api/stats/${slug}`);
+    const response = await fetch(`/api/stats/${slug}`, {
+      headers: getAuthHeaders(token),
+    });
     const data = await response.json();
 
     if (response.ok) {
@@ -56,14 +66,17 @@ export const fetchLinkStats = async (slug) => {
   }
 };
 
-export const fetchChartLinkStats = async (slug) => {
+export const fetchChartLinkStats = async (slug, token) => {
   try {
+    const headers = getAuthHeaders(token);
     // Fetch OS distribution
-    const osResponse = await fetch(`/api/stats/${slug}/os`);
+    const osResponse = await fetch(`/api/stats/${slug}/os`, { headers });
     const osData = await osResponse.json();
 
     // Fetch device distribution
-    const deviceResponse = await fetch(`/api/stats/${slug}/device`);
+    const deviceResponse = await fetch(`/api/stats/${slug}/device`, {
+      headers,
+    });
     const deviceData = await deviceResponse.json();
 
     // Combine OS and device data
@@ -73,16 +86,24 @@ export const fetchChartLinkStats = async (slug) => {
     };
 
     // Fetch country distribution
-    const countryResponse = await fetch(`/api/stats/${slug}/country`);
+    const countryResponse = await fetch(`/api/stats/${slug}/country`, {
+      headers,
+    });
     const countryData = await countryResponse.json();
 
     // Fetch referrer distribution
-    const referrerResponse = await fetch(`/api/stats/${slug}/referrer`);
+    const referrerResponse = await fetch(`/api/stats/${slug}/referrer`, {
+      headers,
+    });
     const referrerData = await referrerResponse.json();
 
     // Fetch bot analytics
-    const botResponse = await fetch(`/api/stats/${slug}/bots`);
+    const botResponse = await fetch(`/api/stats/${slug}/bots`, { headers });
     const botData = await botResponse.json();
+
+    // Fetch user analytics
+    const userResponse = await fetch(`/api/stats/${slug}/users`, { headers });
+    const userData = await userResponse.json();
 
     return {
       osChartData: osResponse.ok ? combinedOsData : null,
@@ -90,6 +111,7 @@ export const fetchChartLinkStats = async (slug) => {
       countryChartData: countryResponse.ok ? countryData : null,
       referrerChartData: referrerResponse.ok ? referrerData : null,
       botChartData: botResponse.ok ? botData : null,
+      userChartData: userResponse.ok ? userData : null,
     };
   } catch (err) {
     console.error("Error fetching chart stats:", err);
@@ -99,13 +121,19 @@ export const fetchChartLinkStats = async (slug) => {
       countryChartData: null,
       referrerChartData: null,
       botChartData: null,
+      userChartData: null,
     };
   }
 };
 
-export const fetchTrafficStats = async (slug, period = "7d") => {
+export const fetchTrafficStats = async (slug, period = "7d", token) => {
   try {
-    const response = await fetch(`/api/stats/${slug}/traffic?period=${period}`);
+    const response = await fetch(
+      `/api/stats/${slug}/traffic?period=${period}`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
     const data = await response.json();
 
     if (response.ok) {
@@ -120,6 +148,63 @@ export const fetchTrafficStats = async (slug, period = "7d") => {
     return {
       success: false,
       error: "Network error occurred while fetching traffic stats",
+    };
+  }
+};
+
+export const fetchClickDetails = async (
+  slug,
+  limit = 25,
+  offset = 0,
+  token,
+) => {
+  try {
+    const response = await fetch(
+      `/api/stats/${slug}/clicks?limit=${limit}&offset=${offset}`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return {
+        success: false,
+        error: data.error || "Failed to fetch click details",
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching click details",
+    };
+  }
+};
+
+export const fetchUserDailyTraffic = async (slug, userId, token) => {
+  try {
+    const response = await fetch(
+      `/api/stats/${slug}/users/${userId}/traffic?period=30d`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return {
+        success: false,
+        error: data.error || "Failed to fetch user traffic stats",
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching user traffic stats",
     };
   }
 };

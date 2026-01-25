@@ -13,7 +13,9 @@ console.log("Postgres client initialized successfully");
 async function initializeTables() {
   try {
     await require("./postgresql").query("SELECT 1");
-    console.log("Postgres connectivity verified - expecting tables to exist or run initDb.js to create them");
+    console.log(
+      "Postgres connectivity verified - expecting tables to exist or run initDb.js to create them",
+    );
   } catch (error) {
     console.warn("=== DATABASE SETUP REQUIRED ===");
     console.warn(
@@ -68,14 +70,15 @@ app.use(express.static(path.join(__dirname, "../client/dist")));
 // ===============================
 // 3. Short URL Redirect (/slug)
 // ===============================
-app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
+const redirectHandler = async (req, res, next) => {
   const slug = req.params.slug;
+  const userId = req.params.userId;
 
   const blockedRoutes = ["api", "dashboard", "stats", "analytics", "recent"];
   if (blockedRoutes.includes(slug)) return next();
 
   try {
-    const longUrl = await UrlService.handleRedirect(slug, req);
+    const longUrl = await UrlService.handleRedirect(slug, req, userId);
 
     if (!longUrl) return next();
 
@@ -84,7 +87,10 @@ app.get("/:slug([A-Za-z0-9-_]+)", async (req, res, next) => {
     console.error("Redirect error:", e);
     res.status(500).send("Server error");
   }
-});
+};
+
+app.get("/:slug([A-Za-z0-9-_]+)", redirectHandler);
+app.get("/:slug([A-Za-z0-9-_]+)/:userId([A-Za-z0-9-_]+)", redirectHandler);
 
 // ===============================
 // 4. React Fallback

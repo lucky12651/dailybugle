@@ -16,6 +16,7 @@ class ClickModel {
       botCategory: row.bot_category,
       botName: row.bot_name,
       deviceInfo: row.device_info,
+      userId: row.user_id,
     };
   }
 
@@ -32,28 +33,55 @@ class ClickModel {
         botCategory,
         botName,
         deviceInfo,
+        userId,
       } = clickData;
 
       const id = crypto.randomUUID();
       const timestamp = new Date().toISOString();
 
-      await db.query(
-        `INSERT INTO clicks (id, slug, timestamp, ip, user_agent, referer, country, location, is_bot, bot_category, bot_name, device_info) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-        [
-          id,
-          slug,
-          timestamp,
-          ip || null,
-          userAgent || null,
-          referer || null,
-          country || null,
-          location || null,
-          !!isBot,
-          botCategory || null,
-          botName || null,
-          deviceInfo || {},
-        ],
-      );
+      try {
+        await db.query(
+          `INSERT INTO clicks (id, slug, timestamp, ip, user_agent, referer, country, location, is_bot, bot_category, bot_name, device_info, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+          [
+            id,
+            slug,
+            timestamp,
+            ip || null,
+            userAgent || null,
+            referer || null,
+            country || null,
+            location || null,
+            !!isBot,
+            botCategory || null,
+            botName || null,
+            deviceInfo || {},
+            userId || null,
+          ],
+        );
+      } catch (err) {
+        // Fallback for missing user_id column
+        if (err.code === "42703" || (err.message || "").includes("column")) {
+          await db.query(
+            `INSERT INTO clicks (id, slug, timestamp, ip, user_agent, referer, country, location, is_bot, bot_category, bot_name, device_info) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+            [
+              id,
+              slug,
+              timestamp,
+              ip || null,
+              userAgent || null,
+              referer || null,
+              country || null,
+              location || null,
+              !!isBot,
+              botCategory || null,
+              botName || null,
+              deviceInfo || {},
+            ],
+          );
+        } else {
+          throw err;
+        }
+      }
 
       return {
         id,
@@ -68,17 +96,35 @@ class ClickModel {
         botCategory,
         botName,
         deviceInfo,
+        userId,
       };
     } catch (error) {
       throw error;
     }
   }
 
-  static async findBySlug(slug) {
+  static async findAllBySlug(slug) {
     try {
       const result = await db.query(`SELECT * FROM clicks WHERE slug = $1`, [
         slug,
       ]);
+      return result.rows.map(ClickModel._mapRow);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async findBySlug(slug, limit = null, offset = 0) {
+    try {
+      let query = `SELECT * FROM clicks WHERE slug = $1 ORDER BY timestamp DESC`;
+      const params = [slug];
+
+      if (limit) {
+        query += ` LIMIT $2 OFFSET $3`;
+        params.push(limit, offset);
+      }
+
+      const result = await db.query(query, params);
       return result.rows.map(ClickModel._mapRow);
     } catch (error) {
       throw error;
@@ -91,7 +137,7 @@ class ClickModel {
 
   static async getOsStats(slug) {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
       const osCount = {};
       clicks.forEach((click) => {
@@ -124,7 +170,7 @@ class ClickModel {
 
   static async getDeviceStats(slug) {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
       const deviceCount = {};
       clicks.forEach((click) => {
@@ -159,7 +205,7 @@ class ClickModel {
 
   static async getReferrerStats(slug) {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
       const referrerCount = {};
       clicks.forEach((click) => {
@@ -213,7 +259,7 @@ class ClickModel {
 
   static async getBotStats(slug) {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
       const trafficTypeCount = { human: 0, bot: 0 };
       const botCategoryCount = {};
@@ -273,7 +319,7 @@ class ClickModel {
 
   static async getTrafficStats(slug, period = "7d") {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
       const now = new Date();
       const locale = "en-IN";
@@ -397,35 +443,147 @@ class ClickModel {
 
   static async getCountryStats(slug) {
     try {
-      const clicks = await this.findBySlug(slug);
+      const clicks = await this.findAllBySlug(slug);
 
-      const locationCount = {};
+      const countryCount = {};
       clicks.forEach((click) => {
         if (click.country) {
-          const countryName = this.getCountryName(click.country);
-          const location = click.location || countryName;
-          locationCount[location] = (locationCount[location] || 0) + 1;
+          const country = click.country;
+          countryCount[country] = (countryCount[country] || 0) + 1;
         }
       });
 
-      const sortedEntries = Object.entries(locationCount).sort(
+      const sortedEntries = Object.entries(countryCount).sort(
         (a, b) => b[1] - a[1],
       );
 
-      let topEntries = sortedEntries.slice(0, 3);
+      let topEntries = sortedEntries.slice(0, 7);
       let othersCount = 0;
 
-      if (sortedEntries.length > 3) {
-        for (let i = 3; i < sortedEntries.length; i++) {
+      if (sortedEntries.length > 7) {
+        for (let i = 7; i < sortedEntries.length; i++) {
           othersCount += sortedEntries[i][1];
         }
         topEntries.push(["Others", othersCount]);
       }
 
-      const labels = topEntries.map((entry) => entry[0]);
+      const labels = topEntries.map((entry) =>
+        ClickModel.getCountryName(entry[0]),
+      );
       const data = topEntries.map((entry) => entry[1]);
 
       return { labels, data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUserTrafficStats(slug, userId, period = "30d") {
+    try {
+      const clicks = await this.findAllBySlug(slug);
+      const userClicks = clicks.filter((click) => click.userId === userId);
+
+      const now = new Date();
+      const locale = "en-US";
+      const timeZone = "Asia/Kolkata";
+      const dayFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+      const dayKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          dayFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}`;
+      };
+
+      const days = 30;
+      // Start of day 30 days ago
+      const cutoffDate = new Date(now);
+      cutoffDate.setDate(now.getDate() - days);
+      cutoffDate.setHours(0, 0, 0, 0);
+
+      const clicksByTime = {};
+      userClicks.forEach((click) => {
+        if (click.timestamp) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            const timeKey = dayKeyFromDate(clickTime);
+            clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
+          }
+        }
+      });
+
+      const timeLabels = [];
+      const clickCounts = [];
+
+      for (let i = days - 1; i >= 0; i--) {
+        const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayKey = dayKeyFromDate(dayTime);
+        timeLabels.push(
+          dayTime.toLocaleDateString("en-IN", {
+            timeZone,
+            day: "2-digit",
+            month: "short",
+          }),
+        );
+        clickCounts.push(clicksByTime[dayKey] || 0);
+      }
+
+      return {
+        period,
+        labels: timeLabels,
+        data: clickCounts,
+        total: clickCounts.reduce((sum, count) => sum + count, 0),
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUserStats(slug) {
+    try {
+      const clicks = await this.findAllBySlug(slug);
+
+      const userStats = {};
+      clicks.forEach((click) => {
+        if (click.userId) {
+          const uid = click.userId;
+          if (!userStats[uid]) {
+            userStats[uid] = { count: 0, lastFetched: click.timestamp };
+          }
+          userStats[uid].count++;
+          // Update lastFetched if this click is more recent
+          if (
+            click.timestamp &&
+            new Date(click.timestamp) > new Date(userStats[uid].lastFetched)
+          ) {
+            userStats[uid].lastFetched = click.timestamp;
+          }
+        }
+      });
+
+      const sortedEntries = Object.entries(userStats).sort(
+        (a, b) => b[1].count - a[1].count,
+      );
+
+      // Top 10 users for chart
+      let topEntries = sortedEntries.slice(0, 10);
+
+      const labels = topEntries.map((entry) => entry[0]);
+      const data = topEntries.map((entry) => entry[1].count);
+
+      // Full list for table
+      const userDetails = sortedEntries.map(([uid, stats]) => ({
+        userId: uid,
+        views: stats.count,
+        lastFetched: stats.lastFetched,
+      }));
+
+      return { labels, data, userDetails };
     } catch (error) {
       throw error;
     }
