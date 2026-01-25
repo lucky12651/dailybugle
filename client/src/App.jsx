@@ -29,14 +29,22 @@ import LinkForm from "./components/LinkForm";
 import QRCodeGenerator from "./components/QRCodeGenerator";
 import RecentLinks from "./components/RecentLinks";
 import StatsModal from "./components/StatsModal";
+import Login from "./components/Login";
 
 const App = () => {
+  const [token, setToken] = useState(localStorage.getItem("authToken"));
   const [longUrl, setLongUrl] = useState("");
   const [customSlug, setCustomSlug] = useState("");
+  const [userId, setUserId] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [recentLinks, setRecentLinks] = useState([]);
+  const [recentLinksOffset, setRecentLinksOffset] = useState(0);
+  const [loadingMoreRecentLinks, setLoadingMoreRecentLinks] = useState(false);
+  const [hasMoreRecentLinks, setHasMoreRecentLinks] = useState(true);
+  const RECENT_LINKS_PER_PAGE = 25;
+
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [showStats, setShowStats] = useState(false);
   const [statsData, setStatsData] = useState(null);
@@ -47,6 +55,7 @@ const App = () => {
   const [countryChartData, setCountryChartData] = useState(null);
   const [referrerChartData, setReferrerChartData] = useState(null);
   const [botChartData, setBotChartData] = useState(null);
+  const [userChartData, setUserChartData] = useState(null);
   const [loadingCharts, setLoadingCharts] = useState({
     os: false,
     device: false,
@@ -55,15 +64,55 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("link"); // 'link' or 'qr'
   const [qrUrl, setQrUrl] = useState("");
 
+  const handleLogin = (newToken) => {
+    setToken(newToken);
+    localStorage.setItem("authToken", newToken);
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    localStorage.removeItem("authToken");
+  };
+
   // Load recent links on component mount
   useEffect(() => {
-    const loadRecentLinks = async () => {
-      const data = await fetchRecentLinks();
-      setRecentLinks(data);
-    };
+    if (token) {
+      const loadRecentLinks = async () => {
+        const data = await fetchRecentLinks(RECENT_LINKS_PER_PAGE, 0, token);
+        setRecentLinks(data);
+        setRecentLinksOffset(data.length);
+        if (data.length < RECENT_LINKS_PER_PAGE) {
+          setHasMoreRecentLinks(false);
+        } else {
+          setHasMoreRecentLinks(true);
+        }
+      };
 
-    loadRecentLinks();
-  }, []);
+      loadRecentLinks();
+    }
+  }, [token]);
+
+  const loadMoreRecentLinks = async () => {
+    if (loadingMoreRecentLinks || !hasMoreRecentLinks) return;
+
+    setLoadingMoreRecentLinks(true);
+    const newLinks = await fetchRecentLinks(
+      RECENT_LINKS_PER_PAGE,
+      recentLinksOffset,
+      token,
+    );
+
+    if (newLinks.length > 0) {
+      setRecentLinks((prev) => [...prev, ...newLinks]);
+      setRecentLinksOffset((prev) => prev + newLinks.length);
+      if (newLinks.length < RECENT_LINKS_PER_PAGE) {
+        setHasMoreRecentLinks(false);
+      }
+    } else {
+      setHasMoreRecentLinks(false);
+    }
+    setLoadingMoreRecentLinks(false);
+  };
 
   // Render charts when chart data changes
   useEffect(() => {
@@ -114,7 +163,7 @@ const App = () => {
     setLoading(true);
     setShortUrl("");
 
-    const result = await shortenUrl(longUrl, customSlug);
+    const result = await shortenUrl(longUrl, customSlug, token);
 
     if (result.success) {
       const data = result.data;
@@ -122,8 +171,9 @@ const App = () => {
       // Add to recent links
       setRecentLinks((prev) => [
         { ...data, createdAt: new Date().toISOString() },
-        ...prev.slice(0, 9),
+        ...prev,
       ]);
+      setRecentLinksOffset((prev) => prev + 1);
       setLongUrl("");
       setCustomSlug("");
     } else {
@@ -141,6 +191,7 @@ const App = () => {
     setCountryChartData(null);
     setReferrerChartData(null);
     setBotChartData(null);
+    setUserChartData(null);
   };
 
   const fetchChartStats = async (slug) => {
@@ -151,20 +202,21 @@ const App = () => {
       country: true,
     }));
 
-    const chartData = await fetchChartLinkStats(slug);
+    const chartData = await fetchChartLinkStats(slug, token);
 
     setOsChartData(chartData.osChartData);
     setDeviceChartData(chartData.deviceChartData);
     setCountryChartData(chartData.countryChartData);
     setReferrerChartData(chartData.referrerChartData);
     setBotChartData(chartData.botChartData);
+    setUserChartData(chartData.userChartData);
 
     setLoadingCharts({ os: false, device: false, country: false });
   };
 
   const fetchStats = async (slug) => {
     setLoadingStats(true);
-    const statsResult = await fetchLinkStats(slug);
+    const statsResult = await fetchLinkStats(slug, token);
 
     if (statsResult.success) {
       setStatsData(statsResult.data);
@@ -178,9 +230,19 @@ const App = () => {
     setLoadingStats(false);
   };
 
+  if (!token) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-gray-800 font-sans">
       <Header />
+      <button
+        onClick={handleLogout}
+        className="absolute top-6 right-6 text-white hover:text-gray-200"
+      >
+        Logout
+      </button>
       <main className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
         <div className="w-full max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -192,6 +254,8 @@ const App = () => {
                   setLongUrl={setLongUrl}
                   customSlug={customSlug}
                   setCustomSlug={setCustomSlug}
+                  userId={userId}
+                  setUserId={setUserId}
                   loading={loading}
                   handleSubmit={handleSubmit}
                   error={error}
@@ -214,6 +278,9 @@ const App = () => {
               setCopiedIndex={setCopiedIndex}
               copyToClipboard={copyToClipboard}
               fetchStats={fetchStats}
+              hasMore={hasMoreRecentLinks}
+              loadMore={loadMoreRecentLinks}
+              loadingMore={loadingMoreRecentLinks}
             />
           </div>
         </div>
@@ -231,7 +298,9 @@ const App = () => {
         countryChartData={countryChartData}
         referrerChartData={referrerChartData}
         botChartData={botChartData}
+        userChartData={userChartData}
         slug={statsData?.slug}
+        token={token}
       />
     </div>
   );

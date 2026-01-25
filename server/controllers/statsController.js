@@ -73,6 +73,31 @@ const statsController = {
       res.status(500).json({ error: "Server error" });
     }
   },
+
+  // GET /api/stats/:slug/users
+  async getUserStats(req, res) {
+    try {
+      const { slug } = req.params;
+      const stats = await StatsService.getUserStats(slug);
+      res.json(stats);
+    } catch (error) {
+      console.error("User stats error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
+  // GET /api/stats/:slug/users/:userId/traffic
+  async getUserTrafficStats(req, res) {
+    try {
+      const { slug, userId } = req.params;
+      const { period = "30d" } = req.query;
+      const stats = await StatsService.getUserTrafficStats(slug, userId, period);
+      res.json(stats);
+    } catch (error) {
+      console.error("User traffic stats error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
 };
 
 module.exports = statsController;

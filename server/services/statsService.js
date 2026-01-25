@@ -49,6 +49,22 @@ class StatsService {
     }
   }
 
+  static async getUserStats(slug) {
+    try {
+      return await ClickModel.getUserStats(slug);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUserTrafficStats(slug, userId, period = "30d") {
+    try {
+      return await ClickModel.getUserTrafficStats(slug, userId, period);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getAllStats(slug) {
     try {
       const [
@@ -58,6 +74,7 @@ class StatsService {
         botStats,
         trafficStats,
         countryStats,
+        userStats,
       ] = await Promise.all([
         this.getOsStats(slug),
         this.getDeviceStats(slug),
@@ -65,6 +82,7 @@ class StatsService {
         this.getBotStats(slug),
         this.getTrafficStats(slug),
         this.getCountryStats(slug),
+        this.getUserStats(slug),
       ]);
 
       return {
@@ -74,6 +92,7 @@ class StatsService {
         bots: botStats,
         traffic: trafficStats,
         country: countryStats,
+        users: userStats,
       };
     } catch (error) {
       throw error;

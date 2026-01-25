@@ -5,6 +5,8 @@ const LinkForm = ({
   setLongUrl,
   customSlug,
   setCustomSlug,
+  userId,
+  setUserId,
   loading,
   handleSubmit,
   error,
@@ -57,6 +59,23 @@ const LinkForm = ({
           />
         </div>
 
+        <div>
+          <label
+            htmlFor="userId"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            User ID (Optional) - for tracking specific user traffic
+          </label>
+          <input
+            type="text"
+            id="userId"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="user-123"
+            className="w-full px-6 py-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder-gray-500 transition-all duration-200"
+          />
+        </div>
+
         <div className="flex justify-start">
           <button
             type="submit"
@@ -81,11 +100,17 @@ const LinkForm = ({
               <p className="text-sm font-medium text-blue-800 truncate">
                 Your shortened link:
               </p>
-              <p className="text-sm text-blue-700 truncate">{shortUrl}</p>
+              <p className="text-sm text-blue-700 truncate">
+                {shortUrl}
+                {userId ? `/${userId}` : ""}
+              </p>
             </div>
             <button
               onClick={async () => {
-                const success = await copyToClipboard(shortUrl);
+                const fullShortUrl = userId
+                  ? `${shortUrl}/${userId}`
+                  : shortUrl;
+                const success = await copyToClipboard(fullShortUrl);
                 if (success) {
                   setCopiedIndex(-1);
                   setTimeout(() => setCopiedIndex(null), 2000);

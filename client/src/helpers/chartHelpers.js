@@ -530,3 +530,8 @@ export const renderBotCategoryChart = (canvasId, chartData) => {
 export const renderBotNameChart = (canvasId, chartData) => {
   renderConsistentDoughnutChart(canvasId, chartData, ["Specific", "Bots"]);
 };
+
+// User Distribution Chart
+export const renderUserDistributionChart = (canvasId, chartData) => {
+  renderConsistentDoughnutChart(canvasId, chartData, ["By", "Users"]);
+};

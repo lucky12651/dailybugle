@@ -40,41 +40,11 @@ class UrlService {
         throw new Error("URL not found");
       }
 
-      const clickDetails = await ClickModel.findBySlug(slug);
+      // Initial load: Get first 25 clicks
+      const clickDetails = await ClickModel.findBySlug(slug, 25, 0);
 
       // Process click details with location information
-      const processedClicks = clickDetails
-        .map((c) => {
-          // Get location information from IP (backward compatibility)
-          let location = c.location || "Unknown"; // Use stored location if available
-          if (location === "Unknown" && c.ip) {
-            const geo = geoip.lookup(c.ip);
-            if (geo) {
-              const countryName = ClickModel.getCountryName(geo.country);
-              const region = geo.region || geo.city || "Unknown";
-              location = `${region}, ${countryName}`;
-            }
-          }
-
-          return {
-            id: c.id || crypto.randomUUID(),
-            timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
-            ip: c.ip || null,
-            location: location, // Human-readable location
-            userAgent: c.userAgent || null,
-            referer: c.referer || null,
-            isBot: c.isBot || false,
-            deviceInfo: c.deviceInfo || {
-              deviceType: "Unknown",
-              os: "Unknown",
-              browser: "Unknown",
-            },
-          };
-        })
-        .sort((a, b) => {
-          if (!a.timestamp || !b.timestamp) return 0;
-          return new Date(b.timestamp) - new Date(a.timestamp);
-        });
+      const processedClicks = this._processClickDetails(clickDetails);
 
       return {
         slug: urlData.slug,
@@ -90,9 +60,49 @@ class UrlService {
     }
   }
 
-  static async getRecentUrls(limit = 20) {
+  static async getClickDetails(slug, limit = 25, offset = 0) {
     try {
-      const urls = await UrlModel.findAll({ limit });
+      const clickDetails = await ClickModel.findBySlug(slug, limit, offset);
+      return this._processClickDetails(clickDetails);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static _processClickDetails(clickDetails) {
+    return clickDetails.map((c) => {
+      // Get location information from IP (backward compatibility)
+      let location = c.location || "Unknown"; // Use stored location if available
+      if (location === "Unknown" && c.ip) {
+        const geo = geoip.lookup(c.ip);
+        if (geo) {
+          const countryName = ClickModel.getCountryName(geo.country);
+          const region = geo.region || geo.city || "Unknown";
+          location = `${region}, ${countryName}`;
+        }
+      }
+
+      return {
+        id: c.id || crypto.randomUUID(),
+        timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
+        ip: c.ip || null,
+        location: location, // Human-readable location
+        userAgent: c.userAgent || null,
+        referer: c.referer || null,
+        isBot: c.isBot || false,
+        deviceInfo: c.deviceInfo || {
+          deviceType: "Unknown",
+          os: "Unknown",
+          browser: "Unknown",
+        },
+        userId: c.userId || null,
+      };
+    });
+  }
+
+  static async getRecentUrls(limit = 25, offset = 0) {
+    try {
+      const urls = await UrlModel.findAll({ limit, offset });
 
       return urls.map((data) => ({
         slug: data.slug,
@@ -110,7 +120,7 @@ class UrlService {
     }
   }
 
-  static async handleRedirect(slug, req) {
+  static async handleRedirect(slug, req, userId = null) {
     try {
       const urlData = await UrlModel.findBySlug(slug);
       if (!urlData) {
@@ -143,21 +153,27 @@ class UrlService {
       }
 
       // Increment click count and save analytics
-      await Promise.all([
-        UrlModel.incrementClicks(slug),
-        ClickModel.create({
-          slug,
-          ip: cleanIP,
-          userAgent,
-          referer: req.get("Referer") || "",
-          country,
-          location,
-          isBot: botDetection.isBot,
-          botCategory: botDetection.category,
-          botName: botDetection.name,
-          deviceInfo,
-        }),
-      ]);
+      try {
+        await Promise.all([
+          UrlModel.incrementClicks(slug),
+          ClickModel.create({
+            slug,
+            ip: cleanIP,
+            userAgent,
+            referer: req.get("Referer") || "",
+            country,
+            location,
+            isBot: botDetection.isBot,
+            botCategory: botDetection.category,
+            botName: botDetection.name,
+            deviceInfo,
+            userId,
+          }),
+        ]);
+      } catch (clickError) {
+        console.error("Error saving click data:", clickError);
+        // Continue even if click tracking fails, so the user still gets redirected
+      }
 
       return urlData.longUrl;
     } catch (error) {
