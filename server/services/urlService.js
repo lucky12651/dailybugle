@@ -5,7 +5,8 @@ const {
   detectBot,
   parseDeviceInfoFromUA,
 } = require("./helperService");
-const geoip = require("geoip-lite");
+const geoip = require("fast-geoip");
+const requestIp = require("request-ip");
 
 class UrlService {
   static async shortenUrl({ longUrl, customSlug }) {
@@ -44,7 +45,7 @@ class UrlService {
       const clickDetails = await ClickModel.findBySlug(slug, 25, 0);
 
       // Process click details with location information
-      const processedClicks = this._processClickDetails(clickDetails);
+      const processedClicks = await this._processClickDetails(clickDetails);
 
       return {
         slug: urlData.slug,
@@ -63,41 +64,43 @@ class UrlService {
   static async getClickDetails(slug, limit = 25, offset = 0) {
     try {
       const clickDetails = await ClickModel.findBySlug(slug, limit, offset);
-      return this._processClickDetails(clickDetails);
+      return await this._processClickDetails(clickDetails);
     } catch (error) {
       throw error;
     }
   }
 
-  static _processClickDetails(clickDetails) {
-    return clickDetails.map((c) => {
-      // Get location information from IP (backward compatibility)
-      let location = c.location || "Unknown"; // Use stored location if available
-      if (location === "Unknown" && c.ip) {
-        const geo = geoip.lookup(c.ip);
-        if (geo) {
-          const countryName = ClickModel.getCountryName(geo.country);
-          const region = geo.region || geo.city || "Unknown";
-          location = `${region}, ${countryName}`;
+  static async _processClickDetails(clickDetails) {
+    return Promise.all(
+      clickDetails.map(async (c) => {
+        // Get location information from IP (backward compatibility)
+        let location = c.location || "Unknown"; // Use stored location if available
+        if (location === "Unknown" && c.ip) {
+          const geo = await geoip.lookup(c.ip);
+          if (geo) {
+            const countryName = ClickModel.getCountryName(geo.country);
+            const region = geo.region || geo.city || "Unknown";
+            location = `${region}, ${countryName}`;
+          }
         }
-      }
 
-      return {
-        id: c.id || crypto.randomUUID(),
-        timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
-        ip: c.ip || null,
-        location: location, // Human-readable location
-        userAgent: c.userAgent || null,
-        referer: c.referer || null,
-        isBot: c.isBot || false,
-        deviceInfo: c.deviceInfo || {
-          deviceType: "Unknown",
-          os: "Unknown",
-          browser: "Unknown",
-        },
-        userId: c.userId || null,
-      };
-    });
+        return {
+          id: c.id || crypto.randomUUID(),
+          timestamp: c.timestamp ? new Date(c.timestamp).toISOString() : null,
+          ip: c.ip || null,
+          location: location, // Human-readable location
+          userAgent: c.userAgent || null,
+          referer: c.referer || null,
+          isBot: c.isBot || false,
+          deviceInfo: c.deviceInfo || {
+            deviceType: "Unknown",
+            os: "Unknown",
+            browser: "Unknown",
+          },
+          userId: c.userId || null,
+        };
+      }),
+    );
   }
 
   static async getRecentUrls(limit = 25, offset = 0) {
@@ -129,19 +132,15 @@ class UrlService {
 
       // Extract request information
       const userAgent = req.get("User-Agent") || "";
-      const ip =
-        req.ip ||
-        req.connection.remoteAddress ||
-        req.socket.remoteAddress ||
-        null;
+      const clientIp = requestIp.getClientIp(req);
 
       const deviceInfo = parseDeviceInfoFromUA(userAgent);
       const botDetection = detectBot(userAgent);
-      let cleanIP = ip;
+      let cleanIP = clientIp;
       if (cleanIP && cleanIP.includes("::ffff:")) {
         cleanIP = cleanIP.replace("::ffff:", "");
       }
-      const geo = geoip.lookup(cleanIP);
+      const geo = await geoip.lookup(cleanIP);
       const country = geo ? geo.country : null;
 
       // Compute human-readable location
