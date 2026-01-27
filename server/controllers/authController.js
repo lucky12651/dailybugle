@@ -16,7 +16,10 @@ const authController = {
       );
 
       const is2FAEnabled = is2FAResult.rows[0].count > 0;
-      const allowSetup = setupAllowedResult.rows.length > 0 ? setupAllowedResult.rows[0].setting_value : true;
+      const allowSetup =
+        setupAllowedResult.rows.length > 0
+          ? setupAllowedResult.rows[0].setting_value
+          : true;
 
       res.json({
         enabled: is2FAEnabled,
@@ -36,10 +39,15 @@ const authController = {
         "SELECT setting_value FROM settings WHERE setting_key = 'allow_2fa_setup'",
       );
 
-      const allowSetup = setupAllowedResult.rows.length > 0 ? setupAllowedResult.rows[0].setting_value : true;
+      const allowSetup =
+        setupAllowedResult.rows.length > 0
+          ? setupAllowedResult.rows[0].setting_value
+          : true;
 
       if (!allowSetup) {
-        return res.status(403).json({ error: "2FA setup is currently disabled by admin" });
+        return res
+          .status(403)
+          .json({ error: "2FA setup is currently disabled by admin" });
       }
 
       const secret = speakeasy.generateSecret({
@@ -99,7 +107,7 @@ const authController = {
       const jwtToken = jwt.sign(
         { verified: true },
         process.env.JWT_SECRET || "default_secret_key",
-        { expiresIn: "24h" },
+        { expiresIn: "7d" },
       );
 
       res.json({
@@ -134,7 +142,7 @@ const authController = {
       let verified = false;
       for (const row of result.rows) {
         const secret = row.secret;
-        
+
         const isValid = speakeasy.totp.verify({
           secret: secret,
           encoding: "base32",
@@ -157,7 +165,7 @@ const authController = {
       const jwtToken = jwt.sign(
         { authenticated: true, timestamp: Date.now() },
         process.env.JWT_SECRET || "default_secret_key",
-        { expiresIn: "24h" },
+        { expiresIn: "7d" },
       );
 
       res.json({
