@@ -40,7 +40,8 @@ const limiter = rateLimit({
 });
 
 const app = express();
-app.set("trust proxy", 1); // Trust first proxy only
+app.set("trust proxy", true);
+
 app.use(express.json());
 app.use(
   cors({
