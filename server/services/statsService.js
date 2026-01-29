@@ -65,6 +65,30 @@ class StatsService {
     }
   }
 
+  static async getAllUsers() {
+    try {
+      return await ClickModel.findAllUsers();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getGlobalUserTraffic(userId, period) {
+    try {
+      return await ClickModel.getGlobalUserTraffic(userId, period);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUserLinks(userId, limit, offset) {
+    try {
+      return await ClickModel.getUserLinks(userId, limit, offset);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getAllStats(slug) {
     try {
       const [

@@ -13,12 +13,12 @@ router.post("/auth/verify-2fa", authController.verify2FA);
 router.post("/auth/toggle-2fa-setup", authMiddleware, async (req, res) => {
   try {
     const { enabled } = req.body;
-    
+
     await require("../postgresql").query(
       "UPDATE settings SET setting_value = $1, updated_at = NOW() WHERE setting_key = 'allow_2fa_setup'",
       [enabled],
     );
-    
+
     res.json({
       message: `2FA setup ${enabled ? "enabled" : "disabled"} successfully`,
       setupAllowed: enabled,
@@ -67,6 +67,19 @@ router.get(
   "/stats/:slug/users/:userId/traffic",
   authMiddleware,
   statsController.getUserTrafficStats,
+);
+
+// Global User Stats Routes (Protected)
+router.get("/users", authMiddleware, statsController.getAllUsers);
+router.get(
+  "/users/:userId/traffic",
+  authMiddleware,
+  statsController.getGlobalUserTraffic,
+);
+router.get(
+  "/users/:userId/links",
+  authMiddleware,
+  statsController.getUserLinks,
 );
 
 module.exports = router;
