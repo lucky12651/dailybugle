@@ -183,10 +183,10 @@ export const fetchClickDetails = async (
   }
 };
 
-export const fetchUserDailyTraffic = async (slug, userId, token) => {
+export const fetchUserDailyTraffic = async (slug, userId, token, period = "30d") => {
   try {
     const response = await fetch(
-      `/api/stats/${slug}/users/${userId}/traffic?period=30d`,
+      `/api/stats/${slug}/users/${userId}/traffic?period=${period}`,
       {
         headers: getAuthHeaders(token),
       },
