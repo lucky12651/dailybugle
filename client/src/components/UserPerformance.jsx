@@ -179,49 +179,55 @@ const UserPerformance = ({ token }) => {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8 mt-8">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">
-        User Performance
-      </h2>
+    <>
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8 mt-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+          User Performance
+        </h2>
 
-      {/* User Tabs */}
-      <div className="flex overflow-x-auto space-x-2 mb-8 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-        {users.map((user) => (
-          <button
-            key={user}
-            onClick={() => setSelectedUser(user)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedUser === user
-                ? "bg-blue-600 text-white shadow-md"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {user}
-          </button>
-        ))}
+        {/* User Tabs */}
+        <div className="flex overflow-x-auto space-x-2 mb-8 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {users.map((user) => (
+            <button
+              key={user}
+              onClick={() => setSelectedUser(user)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                selectedUser === user
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {user}
+            </button>
+          ))}
+        </div>
+
+        {selectedUser && (
+          <div className="space-y-8">
+            <TrafficChartSection
+              trafficPeriod={trafficPeriod}
+              setTrafficPeriod={setTrafficPeriod}
+              trafficData={trafficData}
+              loadingTraffic={loadingTraffic}
+            />
+
+            <LinksTable
+              userLinks={userLinks}
+              loadingLinks={loadingLinks}
+              selectedLink={selectedLink}
+              setSelectedLink={setSelectedLink}
+              dailyLink={dailyLink}
+              setDailyLink={setDailyLink}
+              hasMoreLinks={hasMoreLinks}
+              handleLoadMoreLinks={handleLoadMoreLinks}
+              loadingMoreLinks={loadingMoreLinks}
+            />
+          </div>
+        )}
       </div>
 
       {selectedUser && (
-        <div className="space-y-8">
-          <TrafficChartSection
-            trafficPeriod={trafficPeriod}
-            setTrafficPeriod={setTrafficPeriod}
-            trafficData={trafficData}
-            loadingTraffic={loadingTraffic}
-          />
-
-          <LinksTable
-            userLinks={userLinks}
-            loadingLinks={loadingLinks}
-            selectedLink={selectedLink}
-            setSelectedLink={setSelectedLink}
-            dailyLink={dailyLink}
-            setDailyLink={setDailyLink}
-            hasMoreLinks={hasMoreLinks}
-            handleLoadMoreLinks={handleLoadMoreLinks}
-            loadingMoreLinks={loadingMoreLinks}
-          />
-
+        <>
           <LinkInfoModal
             selectedLink={selectedLink}
             setSelectedLink={setSelectedLink}
@@ -241,9 +247,9 @@ const UserPerformance = ({ token }) => {
             loadingDailyTraffic={loadingDailyTraffic}
             setDailyTrafficData={setDailyTrafficData}
           />
-        </div>
+        </>
       )}
-    </div>
+    </>
   );
 };
 

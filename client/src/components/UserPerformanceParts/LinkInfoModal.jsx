@@ -9,7 +9,7 @@ const LinkInfoModal = ({
   setLinkTrafficPeriod,
   linkTrafficData,
   loadingLinkTraffic,
-  setLinkTrafficData
+  setLinkTrafficData,
 }) => {
   useEffect(() => {
     if (linkTrafficData && selectedLink) {
@@ -20,11 +20,11 @@ const LinkInfoModal = ({
   if (!selectedLink) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
         <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between z-10">
           <div>
-            <h4 className="text-xl font-bold text-gray-800">
+            <h4 className="text-l font-medium text-gray-800">
               Traffic Analysis: /{selectedLink.slug}
             </h4>
             <p className="text-sm text-gray-500">
