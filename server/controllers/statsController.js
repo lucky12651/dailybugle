@@ -98,6 +98,45 @@ const statsController = {
       res.status(500).json({ error: "Server error" });
     }
   },
+
+  // GET /api/users
+  async getAllUsers(req, res) {
+    try {
+      const users = await StatsService.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Get all users error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
+  // GET /api/users/:userId/traffic
+  async getGlobalUserTraffic(req, res) {
+    try {
+      const { userId } = req.params;
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getGlobalUserTraffic(userId, period);
+      res.json(stats);
+    } catch (error) {
+      console.error("Global user traffic error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
+  // GET /api/users/:userId/links
+  async getUserLinks(req, res) {
+    try {
+      const { userId } = req.params;
+      const limit = parseInt(req.query.limit) || 15;
+      const offset = parseInt(req.query.offset) || 0;
+      const links = await StatsService.getUserLinks(userId, limit, offset);
+      res.json(links);
+    } catch (error) {
+      console.error("User links error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
 };
+
 
 module.exports = statsController;

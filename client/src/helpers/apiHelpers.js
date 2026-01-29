@@ -208,3 +208,50 @@ export const fetchUserDailyTraffic = async (slug, userId, token) => {
     };
   }
 };
+
+export const fetchAllUsers = async (token) => {
+  try {
+    const response = await fetch("/api/users", {
+      headers: getAuthHeaders(token),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, data };
+    }
+    return { success: false, error: "Failed to fetch users" };
+  } catch (err) {
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const fetchGlobalUserTraffic = async (userId, period = "7d", token) => {
+  try {
+    const response = await fetch(
+      `/api/users/${userId}/traffic?period=${period}`,
+      { headers: getAuthHeaders(token) },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, data };
+    }
+    return { success: false, error: "Failed to fetch traffic" };
+  } catch (err) {
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const fetchUserLinks = async (userId, limit = 15, offset = 0, token) => {
+  try {
+    const response = await fetch(
+      `/api/users/${userId}/links?limit=${limit}&offset=${offset}`,
+      { headers: getAuthHeaders(token) },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, data };
+    }
+    return { success: false, error: "Failed to fetch links" };
+  } catch (err) {
+    return { success: false, error: "Network error" };
+  }
+};

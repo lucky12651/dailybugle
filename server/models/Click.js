@@ -589,6 +589,176 @@ class ClickModel {
     }
   }
 
+  static async findAllUsers() {
+    try {
+      const result = await db.query(
+        `SELECT DISTINCT user_id FROM clicks WHERE user_id IS NOT NULL ORDER BY user_id`,
+      );
+      return result.rows.map((row) => row.user_id);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async findAllByUserId(userId) {
+    try {
+      const result = await db.query(`SELECT * FROM clicks WHERE user_id = $1`, [
+        userId,
+      ]);
+      return result.rows.map(ClickModel._mapRow);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getGlobalUserTraffic(userId, period = "7d") {
+    try {
+      const clicks = await this.findAllByUserId(userId);
+
+      const now = new Date();
+      const locale = "en-IN";
+      const timeZone = "Asia/Kolkata";
+      const hourFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        hour12: false,
+      });
+      const dayFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const hourKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          hourFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:00:00`;
+      };
+      const dayKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          dayFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}`;
+      };
+      let cutoffDate;
+
+      switch (period) {
+        case "24h":
+          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case "3d":
+          cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+          break;
+        case "7d":
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "45d":
+          cutoffDate = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+          break;
+        case "30d":
+          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+
+      const clicksByTime = {};
+      clicks.forEach((click) => {
+        if (click.timestamp) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            let timeKey;
+
+            if (period === "24h") {
+              timeKey = hourKeyFromDate(clickTime);
+            } else {
+              timeKey = dayKeyFromDate(clickTime);
+            }
+
+            clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
+          }
+        }
+      });
+
+      const timeLabels = [];
+      const clickCounts = [];
+
+      if (period === "24h") {
+        for (let i = 23; i >= 0; i--) {
+          const hourTime = new Date(now.getTime() - i * 60 * 60 * 1000);
+          const hourKey = hourKeyFromDate(hourTime);
+          timeLabels.push(
+            hourTime.toLocaleTimeString("en-IN", {
+              timeZone,
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }),
+          );
+          clickCounts.push(clicksByTime[hourKey] || 0);
+        }
+      } else {
+        const days =
+          period === "3d"
+            ? 3
+            : period === "7d"
+              ? 7
+              : period === "45d"
+                ? 45
+                : 30;
+        for (let i = days - 1; i >= 0; i--) {
+          const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const dayKey = dayKeyFromDate(dayTime);
+          timeLabels.push(
+            dayTime.toLocaleDateString("en-IN", {
+              timeZone,
+              day: "2-digit",
+              month: "short",
+            }),
+          );
+          clickCounts.push(clicksByTime[dayKey] || 0);
+        }
+      }
+
+      return {
+        period,
+        labels: timeLabels,
+        data: clickCounts,
+        total: clickCounts.reduce((sum, count) => sum + count, 0),
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getUserLinks(userId, limit = 15, offset = 0) {
+    try {
+      const query = `
+        SELECT slug, COUNT(*) as views, MAX(timestamp) as last_accessed
+        FROM clicks
+        WHERE user_id = $1
+        GROUP BY slug
+        ORDER BY views DESC
+        LIMIT $2 OFFSET $3
+      `;
+      const result = await db.query(query, [userId, limit, offset]);
+
+      return result.rows.map((row) => ({
+        slug: row.slug,
+        views: parseInt(row.views),
+        lastAccessed: row.last_accessed
+          ? new Date(row.last_accessed).toISOString()
+          : null,
+      }));
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static getCountryName(code) {
     return code || "Unknown";
   }
