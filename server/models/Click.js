@@ -484,14 +484,29 @@ class ClickModel {
       const userClicks = clicks.filter((click) => click.userId === userId);
 
       const now = new Date();
-      const locale = "en-US";
+      const locale = "en-IN";
       const timeZone = "Asia/Kolkata";
+      const hourFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        hour12: false,
+      });
       const dayFormatter = new Intl.DateTimeFormat(locale, {
         timeZone,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
       });
+
+      const hourKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          hourFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:00:00`;
+      };
 
       const dayKeyFromDate = (d) => {
         const parts = Object.fromEntries(
@@ -500,18 +515,34 @@ class ClickModel {
         return `${parts.year}-${parts.month}-${parts.day}`;
       };
 
-      const days = 30;
-      // Start of day 30 days ago
-      const cutoffDate = new Date(now);
-      cutoffDate.setDate(now.getDate() - days);
-      cutoffDate.setHours(0, 0, 0, 0);
+      let cutoffDate;
+      switch (period) {
+        case "24h":
+          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case "3d":
+          cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+          break;
+        case "7d":
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "30d":
+        default:
+          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+      }
 
       const clicksByTime = {};
       userClicks.forEach((click) => {
         if (click.timestamp) {
           const clickTime = new Date(click.timestamp);
           if (clickTime >= cutoffDate) {
-            const timeKey = dayKeyFromDate(clickTime);
+            let timeKey;
+            if (period === "24h") {
+              timeKey = hourKeyFromDate(clickTime);
+            } else {
+              timeKey = dayKeyFromDate(clickTime);
+            }
             clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
           }
         }
@@ -520,17 +551,34 @@ class ClickModel {
       const timeLabels = [];
       const clickCounts = [];
 
-      for (let i = days - 1; i >= 0; i--) {
-        const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dayKey = dayKeyFromDate(dayTime);
-        timeLabels.push(
-          dayTime.toLocaleDateString("en-IN", {
-            timeZone,
-            day: "2-digit",
-            month: "short",
-          }),
-        );
-        clickCounts.push(clicksByTime[dayKey] || 0);
+      if (period === "24h") {
+        for (let i = 23; i >= 0; i--) {
+          const hourTime = new Date(now.getTime() - i * 60 * 60 * 1000);
+          const hourKey = hourKeyFromDate(hourTime);
+          timeLabels.push(
+            hourTime.toLocaleTimeString("en-IN", {
+              timeZone,
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }),
+          );
+          clickCounts.push(clicksByTime[hourKey] || 0);
+        }
+      } else {
+        const days = period === "3d" ? 3 : period === "7d" ? 7 : 30;
+        for (let i = days - 1; i >= 0; i--) {
+          const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const dayKey = dayKeyFromDate(dayTime);
+          timeLabels.push(
+            dayTime.toLocaleDateString("en-IN", {
+              timeZone,
+              day: "2-digit",
+              month: "short",
+            }),
+          );
+          clickCounts.push(clicksByTime[dayKey] || 0);
+        }
       }
 
       return {
