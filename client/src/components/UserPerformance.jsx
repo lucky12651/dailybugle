@@ -9,11 +9,15 @@ import TrafficChartSection from "./UserPerformanceParts/TrafficChartSection";
 import LinksTable from "./UserPerformanceParts/LinksTable";
 import LinkInfoModal from "./UserPerformanceParts/LinkInfoModal";
 import DailyViewsModal from "./UserPerformanceParts/DailyViewsModal";
+import LinkGeneratorModal from "./UserPerformanceParts/LinkGeneratorModal";
 
 const UserPerformance = ({ token }) => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Modal States
+  const [isLinkGeneratorOpen, setIsLinkGeneratorOpen] = useState(false);
 
   // Traffic Stats State
   const [trafficPeriod, setTrafficPeriod] = useState("7d");
@@ -181,9 +185,30 @@ const UserPerformance = ({ token }) => {
   return (
     <>
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8 mt-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
-          User Performance
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            User Performance
+          </h2>
+          <button
+            onClick={() => setIsLinkGeneratorOpen(true)}
+            className="flex items-center justify-center space-x-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium rounded-xl transition-colors border border-indigo-100 shadow-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+              />
+            </svg>
+          </button>
+        </div>
 
         {/* User Tabs */}
         <div className="flex overflow-x-auto space-x-2 mb-8 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -246,6 +271,12 @@ const UserPerformance = ({ token }) => {
             dailyTrafficData={dailyTrafficData}
             loadingDailyTraffic={loadingDailyTraffic}
             setDailyTrafficData={setDailyTrafficData}
+          />
+
+          <LinkGeneratorModal
+            isOpen={isLinkGeneratorOpen}
+            onClose={() => setIsLinkGeneratorOpen(false)}
+            initialUserId={selectedUser}
           />
         </>
       )}
