@@ -183,7 +183,12 @@ export const fetchClickDetails = async (
   }
 };
 
-export const fetchUserDailyTraffic = async (slug, userId, token, period = "30d") => {
+export const fetchUserDailyTraffic = async (
+  slug,
+  userId,
+  token,
+  period = "30d",
+) => {
   try {
     const response = await fetch(
       `/api/stats/${slug}/users/${userId}/traffic?period=${period}`,
@@ -253,5 +258,95 @@ export const fetchUserLinks = async (userId, limit = 15, offset = 0, token) => {
     return { success: false, error: "Failed to fetch links" };
   } catch (err) {
     return { success: false, error: "Network error" };
+  }
+};
+
+// Fetch link analytics data for individual links
+export const fetchLinkLocationData = async (slug, userId, token) => {
+  try {
+    const response = await fetch(`/api/stats/${slug}/country`, {
+      headers: getAuthHeaders(token),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return {
+        success: false,
+        error: data.error || "Failed to fetch location data",
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching location data",
+    };
+  }
+};
+
+export const fetchLinkReferrerData = async (slug, userId, token) => {
+  try {
+    const response = await fetch(`/api/stats/${slug}/referrer`, {
+      headers: getAuthHeaders(token),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return {
+        success: false,
+        error: data.error || "Failed to fetch referrer data",
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching referrer data",
+    };
+  }
+};
+
+export const fetchLinkOSData = async (slug, userId, token) => {
+  try {
+    const response = await fetch(`/api/stats/${slug}/os`, {
+      headers: getAuthHeaders(token),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.error || "Failed to fetch OS data" };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching OS data",
+    };
+  }
+};
+
+export const fetchLinkBotData = async (slug, userId, token) => {
+  try {
+    const response = await fetch(`/api/stats/${slug}/bots`, {
+      headers: getAuthHeaders(token),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return {
+        success: false,
+        error: data.error || "Failed to fetch bot data",
+      };
+    }
+  } catch (err) {
+    return {
+      success: false,
+      error: "Network error occurred while fetching bot data",
+    };
   }
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Loader from "./Loader";
 
 const Login = ({ onLogin }) => {
   const [code, setCode] = useState("");
@@ -112,7 +113,9 @@ const Login = ({ onLogin }) => {
         setSetupCode("");
         setSecret("");
         setQrCode("");
-        setError("2FA setup added successfully! Now you can login with your 6-digit code.");
+        setError(
+          "2FA setup added successfully! Now you can login with your 6-digit code.",
+        );
         setTimeout(() => setError(""), 3000);
       } else {
         setError(data.error || "Verification failed");
@@ -127,7 +130,7 @@ const Login = ({ onLogin }) => {
   if (checkingStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-white text-xl">Loading...</div>
+        <Loader />
       </div>
     );
   }

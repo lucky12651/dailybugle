@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
 import { renderTrafficChart } from "../../helpers/chartHelpers";
+import Loader from "../Loader";
 
-const TrafficChartSection = ({ 
-  trafficPeriod, 
-  setTrafficPeriod, 
-  trafficData, 
-  loadingTraffic 
+const TrafficChartSection = ({
+  trafficPeriod,
+  setTrafficPeriod,
+  trafficData,
+  loadingTraffic,
 }) => {
   useEffect(() => {
     if (trafficData) {
@@ -46,7 +47,7 @@ const TrafficChartSection = ({
       <div className="h-44">
         {loadingTraffic ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <Loader />
           </div>
         ) : trafficData ? (
           <>
@@ -57,11 +58,7 @@ const TrafficChartSection = ({
               <span className="text-gray-600 ml-2">total views</span>
             </div>
 
-            <canvas
-              id="userPerformanceChart"
-              width="400"
-              height="134"
-            ></canvas>
+            <canvas id="userPerformanceChart" width="400" height="134"></canvas>
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">

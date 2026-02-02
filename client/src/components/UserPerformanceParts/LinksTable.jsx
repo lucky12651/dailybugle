@@ -1,20 +1,21 @@
 import React from "react";
+import Loader from "../Loader";
 
-const LinksTable = ({ 
-  userLinks, 
-  loadingLinks, 
-  selectedLink, 
-  setSelectedLink, 
-  dailyLink, 
-  setDailyLink, 
-  hasMoreLinks, 
-  handleLoadMoreLinks, 
-  loadingMoreLinks 
+const LinksTable = ({
+  userLinks,
+  loadingLinks,
+  selectedLink,
+  setSelectedLink,
+  dailyLink,
+  setDailyLink,
+  hasMoreLinks,
+  handleLoadMoreLinks,
+  loadingMoreLinks,
 }) => {
   if (loadingLinks && userLinks.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm p-8 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <Loader />
       </div>
     );
   }
@@ -22,9 +23,7 @@ const LinksTable = ({
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-        <h4 className="text-lg font-semibold text-gray-800">
-          Accessed Links
-        </h4>
+        <h4 className="text-lg font-semibold text-gray-800">Accessed Links</h4>
       </div>
 
       {userLinks.length > 0 ? (
@@ -61,12 +60,9 @@ const LinksTable = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {link.lastAccessed
-                        ? new Date(link.lastAccessed).toLocaleString(
-                            "en-IN",
-                            {
-                              timeZone: "Asia/Kolkata",
-                            },
-                          )
+                        ? new Date(link.lastAccessed).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                          })
                         : "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

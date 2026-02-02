@@ -10,6 +10,7 @@ import LinksTable from "./UserPerformanceParts/LinksTable";
 import LinkInfoModal from "./UserPerformanceParts/LinkInfoModal";
 import DailyViewsModal from "./UserPerformanceParts/DailyViewsModal";
 import LinkGeneratorModal from "./UserPerformanceParts/LinkGeneratorModal";
+import Loader from "./Loader";
 
 const UserPerformance = ({ token }) => {
   const [users, setUsers] = useState([]);
@@ -173,7 +174,7 @@ const UserPerformance = ({ token }) => {
   if (loadingUsers && users.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-xl p-8 mt-8 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <Loader />
       </div>
     );
   }
@@ -262,6 +263,7 @@ const UserPerformance = ({ token }) => {
             linkTrafficData={linkTrafficData}
             loadingLinkTraffic={loadingLinkTraffic}
             setLinkTrafficData={setLinkTrafficData}
+            token={token}
           />
 
           <DailyViewsModal
