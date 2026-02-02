@@ -1,4 +1,4 @@
-# URL Shortener Application
+# URL Shortener SERVICE
 
 A full-stack URL shortener application built with **Node.js, React, and PostgreSQL**.
 
@@ -6,20 +6,20 @@ A full-stack URL shortener application built with **Node.js, React, and PostgreS
 
 ## Features
 
-* Shorten long URLs with custom or auto-generated slugs
-* Server-side redirects (SEO & social media crawler friendly)
-* Click analytics and tracking
-* Recent links history
-* Copy-to-clipboard support
-* Responsive UI
+- Shorten long URLs with custom or auto-generated slugs
+- Server-side redirects (SEO & social media crawler friendly)
+- Click analytics and tracking
+- Recent links history
+- Copy-to-clipboard support
+- Responsive UI
 
 ---
 
 ## Tech Stack
 
-* **Backend**: Node.js, Express.js
-* **Database**: PostgreSQL
-* **Frontend**: React, Vite, Tailwind CSS
+- **Backend**: Node.js, Express.js
+- **Database**: PostgreSQL
+- **Frontend**: React, Vite, Tailwind CSS
 
 ---
 
@@ -56,9 +56,9 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### Prerequisites
 
-* Node.js (v14 or higher)
-* npm or yarn
-* PostgreSQL (v12 or higher)
+- Node.js (v14 or higher)
+- npm or yarn
+- PostgreSQL (v12 or higher)
 
 ---
 
@@ -77,10 +77,9 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
    ```
 
 3. Set up PostgreSQL:
-
-   * Create a PostgreSQL database
-   * Run the SQL schema provided above
-   * Note your database credentials
+   - Create a PostgreSQL database
+   - Run the SQL schema provided above
+   - Note your database credentials
 
 4. Create a `.env` file in the `server` directory:
 
@@ -127,10 +126,10 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ## API Endpoints
 
-* `POST /api/shorten` – Create a shortened URL
-* `GET /:slug` – Redirect to the original URL
-* `GET /api/recent` – Get recently created URLs
-* `GET /api/stats/:slug` – Get analytics for a specific URL
+- `POST /api/shorten` – Create a shortened URL
+- `GET /:slug` – Redirect to the original URL
+- `GET /api/recent` – Get recently created URLs
+- `GET /api/stats/:slug` – Get analytics for a specific URL
 
 ---
 
@@ -138,13 +137,13 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ### Server (`.env`)
 
-* `PORT` – Server port (default: 3000)
-* `BASE_URL` – Base URL for generating short links
-* `DB_HOST` – PostgreSQL host
-* `DB_PORT` – PostgreSQL port
-* `DB_NAME` – Database name
-* `DB_USER` – Database user
-* `DB_PASSWORD` – Database password
+- `PORT` – Server port (default: 3000)
+- `BASE_URL` – Base URL for generating short links
+- `DB_HOST` – PostgreSQL host
+- `DB_PORT` – PostgreSQL port
+- `DB_NAME` – Database name
+- `DB_USER` – Database user
+- `DB_PASSWORD` – Database password
 
 ---
 
@@ -159,10 +158,9 @@ For production deployment:
    ```
 
 2. Serve the frontend build via:
-
-   * Nginx
-   * Express static files
-   * CDN (optional)
+   - Nginx
+   - Express static files
+   - CDN (optional)
 
 3. Set production environment variables on the server
 
@@ -174,11 +172,11 @@ For production deployment:
 
 ## Security Considerations
 
-* Never commit `.env` files to version control
-* Use strong database credentials
-* Implement rate limiting to prevent abuse
-* Sanitize inputs to avoid SQL injection
-* Consider authentication for managing personal links
+- Never commit `.env` files to version control
+- Use strong database credentials
+- Implement rate limiting to prevent abuse
+- Sanitize inputs to avoid SQL injection
+- Consider authentication for managing personal links
 
 ---
 
