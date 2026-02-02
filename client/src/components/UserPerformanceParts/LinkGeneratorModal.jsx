@@ -6,6 +6,7 @@ const LinkGeneratorModal = ({ isOpen, onClose, initialUserId }) => {
   const [userId, setUserId] = useState(initialUserId || "");
   const [generatedLinks, setGeneratedLinks] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [clickedIndices, setClickedIndices] = useState(new Set());
 
   useEffect(() => {
     if (initialUserId) setUserId(initialUserId);
@@ -27,11 +28,13 @@ const LinkGeneratorModal = ({ isOpen, onClose, initialUserId }) => {
 
     setGeneratedLinks(urls);
     setCopiedIndex(null);
+    setClickedIndices(new Set());
   };
 
   const handleCopySingle = async (link, index) => {
     await navigator.clipboard.writeText(link);
     setCopiedIndex(index);
+    setClickedIndices((prev) => new Set(prev).add(index));
     setTimeout(() => setCopiedIndex(null), 1500);
   };
 
@@ -105,7 +108,9 @@ const LinkGeneratorModal = ({ isOpen, onClose, initialUserId }) => {
                       className={`cursor-pointer p-2 rounded-lg border break-all transition ${
                         copiedIndex === idx
                           ? "bg-green-100 border-green-300 text-green-700"
-                          : "bg-white hover:bg-blue-50"
+                          : clickedIndices.has(idx)
+                            ? "bg-blue-50 border-blue-400 text-blue-700"
+                            : "bg-white hover:bg-blue-50"
                       }`}
                       title="Click to copy"
                     >
