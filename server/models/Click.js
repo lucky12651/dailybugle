@@ -135,15 +135,44 @@ class ClickModel {
     return this.findBySlug(slug);
   }
 
-  static async getOsStats(slug) {
+  // Helper method to get cutoff date based on period
+  static _getCutoffDate(period) {
+    const now = new Date();
+    let cutoffDate;
+
+    switch (period) {
+      case "24h":
+        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "3d":
+        cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        break;
+      case "7d":
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30d":
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    return cutoffDate;
+  }
+
+  static async getOsStats(slug, period = "7d") {
     try {
       const clicks = await this.findAllBySlug(slug);
+      const cutoffDate = this._getCutoffDate(period);
 
       const osCount = {};
       clicks.forEach((click) => {
-        if (click.deviceInfo && click.deviceInfo.os) {
-          const os = click.deviceInfo.os;
-          osCount[os] = (osCount[os] || 0) + 1;
+        if (click.timestamp && click.deviceInfo && click.deviceInfo.os) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            const os = click.deviceInfo.os;
+            osCount[os] = (osCount[os] || 0) + 1;
+          }
         }
       });
 
@@ -203,35 +232,47 @@ class ClickModel {
     }
   }
 
-  static async getReferrerStats(slug) {
+  static async getReferrerStats(slug, period = "7d") {
     try {
       const clicks = await this.findAllBySlug(slug);
+      const cutoffDate = this._getCutoffDate(period);
 
       const referrerCount = {};
       clicks.forEach((click) => {
-        const referrer = click.referer || "Direct Traffic";
+        if (click.timestamp) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            const referrer = click.referer || "Direct Traffic";
 
-        let cleanReferrer = "Direct Traffic";
-        if (referrer !== "Direct Traffic" && referrer) {
-          try {
-            const url = new URL(referrer);
-            const hostname = url.hostname.replace("www.", "");
+            let cleanReferrer = "Direct Traffic";
+            if (referrer !== "Direct Traffic" && referrer) {
+              try {
+                const url = new URL(referrer);
+                const hostname = url.hostname.replace("www.", "");
 
-            if (hostname.includes("google")) cleanReferrer = "Google";
-            else if (hostname.includes("bing")) cleanReferrer = "Bing";
-            else if (hostname.includes("yahoo")) cleanReferrer = "Yahoo";
-            else if (hostname.includes("facebook")) cleanReferrer = "Facebook";
-            else if (hostname.includes("twitter") || hostname.includes("x.com"))
-              cleanReferrer = "Twitter/X";
-            else if (hostname.includes("linkedin")) cleanReferrer = "LinkedIn";
-            else if (hostname.includes("reddit")) cleanReferrer = "Reddit";
-            else cleanReferrer = hostname;
-          } catch (e) {
-            cleanReferrer = "Invalid URL";
+                if (hostname.includes("google")) cleanReferrer = "Google";
+                else if (hostname.includes("bing")) cleanReferrer = "Bing";
+                else if (hostname.includes("yahoo")) cleanReferrer = "Yahoo";
+                else if (hostname.includes("facebook"))
+                  cleanReferrer = "Facebook";
+                else if (
+                  hostname.includes("twitter") ||
+                  hostname.includes("x.com")
+                )
+                  cleanReferrer = "Twitter/X";
+                else if (hostname.includes("linkedin"))
+                  cleanReferrer = "LinkedIn";
+                else if (hostname.includes("reddit")) cleanReferrer = "Reddit";
+                else cleanReferrer = hostname;
+              } catch (e) {
+                cleanReferrer = "Invalid URL";
+              }
+            }
+
+            referrerCount[cleanReferrer] =
+              (referrerCount[cleanReferrer] || 0) + 1;
           }
         }
-
-        referrerCount[cleanReferrer] = (referrerCount[cleanReferrer] || 0) + 1;
       });
 
       const sortedEntries = Object.entries(referrerCount).sort(
@@ -257,25 +298,32 @@ class ClickModel {
     }
   }
 
-  static async getBotStats(slug) {
+  static async getBotStats(slug, period = "7d") {
     try {
       const clicks = await this.findAllBySlug(slug);
+      const cutoffDate = this._getCutoffDate(period);
 
       const trafficTypeCount = { human: 0, bot: 0 };
       const botCategoryCount = {};
       const botNameCount = {};
 
       clicks.forEach((click) => {
-        if (click.isBot) {
-          trafficTypeCount.bot++;
+        if (click.timestamp) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            if (click.isBot) {
+              trafficTypeCount.bot++;
 
-          const category = click.botCategory || "Unknown";
-          botCategoryCount[category] = (botCategoryCount[category] || 0) + 1;
+              const category = click.botCategory || "Unknown";
+              botCategoryCount[category] =
+                (botCategoryCount[category] || 0) + 1;
 
-          const botName = click.botName || "Unknown Bot";
-          botNameCount[botName] = (botNameCount[botName] || 0) + 1;
-        } else {
-          trafficTypeCount.human++;
+              const botName = click.botName || "Unknown Bot";
+              botNameCount[botName] = (botNameCount[botName] || 0) + 1;
+            } else {
+              trafficTypeCount.human++;
+            }
+          }
         }
       });
 
@@ -441,15 +489,19 @@ class ClickModel {
     }
   }
 
-  static async getCountryStats(slug) {
+  static async getCountryStats(slug, period = "7d") {
     try {
       const clicks = await this.findAllBySlug(slug);
+      const cutoffDate = this._getCutoffDate(period);
 
       const countryCount = {};
       clicks.forEach((click) => {
-        if (click.country) {
-          const country = click.country;
-          countryCount[country] = (countryCount[country] || 0) + 1;
+        if (click.timestamp && click.country) {
+          const clickTime = new Date(click.timestamp);
+          if (clickTime >= cutoffDate) {
+            const country = click.country;
+            countryCount[country] = (countryCount[country] || 0) + 1;
+          }
         }
       });
 

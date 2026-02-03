@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { renderDailyViewsBarChart } from "../../helpers/chartHelpers";
 import Loader from "../Loader";
 
 const UserTrafficModal = ({
@@ -7,6 +8,12 @@ const UserTrafficModal = ({
   loadingUserTraffic,
   userTrafficData,
 }) => {
+  useEffect(() => {
+    if (userTrafficData && selectedUser) {
+      renderDailyViewsBarChart("userDailyViewsChart", userTrafficData);
+    }
+  }, [userTrafficData, selectedUser]);
+
   if (!selectedUser) return null;
 
   return (
@@ -14,8 +21,7 @@ const UserTrafficModal = ({
       <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden h-[400px]">
         <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 border-b border-indigo-100 flex justify-between items-center">
           <h4 className="text-lg font-semibold text-gray-800">
-            User Traffic:{" "}
-            <span className="text-blue-600">{selectedUser}</span>
+            User Traffic: <span className="text-blue-600">{selectedUser}</span>
           </h4>
           <button
             onClick={closeUserTraffic}

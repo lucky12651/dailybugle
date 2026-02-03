@@ -50,9 +50,9 @@ const LinkInfoModal = ({
   // Fetch additional analytics data when link is selected
   useEffect(() => {
     if (selectedLink && selectedUser && token) {
-      loadAdditionalAnalytics();
+      loadAdditionalAnalytics(linkTrafficPeriod);
     }
-  }, [selectedLink, selectedUser, token]);
+  }, [selectedLink, selectedUser, token, linkTrafficPeriod]);
 
   // Render charts when data is available
   useEffect(() => {
@@ -80,7 +80,7 @@ const LinkInfoModal = ({
   }, [botData?.trafficTypeData]);
 
   // Function to load additional analytics data
-  const loadAdditionalAnalytics = async () => {
+  const loadAdditionalAnalytics = async (period = "7d") => {
     setLoadingAdditionalData(true);
 
     try {
@@ -95,10 +95,10 @@ const LinkInfoModal = ({
       // Fetch all data in parallel
       const [locationResult, referrerResult, osResult, botResult] =
         await Promise.all([
-          fetchLinkLocationData(selectedLink.slug, selectedUser, token),
-          fetchLinkReferrerData(selectedLink.slug, selectedUser, token),
-          fetchLinkOSData(selectedLink.slug, selectedUser, token),
-          fetchLinkBotData(selectedLink.slug, selectedUser, token),
+          fetchLinkLocationData(selectedLink.slug, selectedUser, token, period),
+          fetchLinkReferrerData(selectedLink.slug, selectedUser, token, period),
+          fetchLinkOSData(selectedLink.slug, selectedUser, token, period),
+          fetchLinkBotData(selectedLink.slug, selectedUser, token, period),
         ]);
 
       // Update state with fetched data

@@ -1,9 +1,9 @@
 const ClickModel = require("../models/Click");
 
 class StatsService {
-  static async getOsStats(slug) {
+  static async getOsStats(slug, period = "7d") {
     try {
-      return await ClickModel.getOsStats(slug);
+      return await ClickModel.getOsStats(slug, period);
     } catch (error) {
       throw error;
     }
@@ -17,17 +17,17 @@ class StatsService {
     }
   }
 
-  static async getReferrerStats(slug) {
+  static async getReferrerStats(slug, period = "7d") {
     try {
-      return await ClickModel.getReferrerStats(slug);
+      return await ClickModel.getReferrerStats(slug, period);
     } catch (error) {
       throw error;
     }
   }
 
-  static async getBotStats(slug) {
+  static async getBotStats(slug, period = "7d") {
     try {
-      return await ClickModel.getBotStats(slug);
+      return await ClickModel.getBotStats(slug, period);
     } catch (error) {
       throw error;
     }
@@ -41,9 +41,9 @@ class StatsService {
     }
   }
 
-  static async getCountryStats(slug) {
+  static async getCountryStats(slug, period = "7d") {
     try {
-      return await ClickModel.getCountryStats(slug);
+      return await ClickModel.getCountryStats(slug, period);
     } catch (error) {
       throw error;
     }

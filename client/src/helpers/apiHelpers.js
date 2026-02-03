@@ -262,11 +262,19 @@ export const fetchUserLinks = async (userId, limit = 15, offset = 0, token) => {
 };
 
 // Fetch link analytics data for individual links
-export const fetchLinkLocationData = async (slug, userId, token) => {
+export const fetchLinkLocationData = async (
+  slug,
+  userId,
+  token,
+  period = "7d",
+) => {
   try {
-    const response = await fetch(`/api/stats/${slug}/country`, {
-      headers: getAuthHeaders(token),
-    });
+    const response = await fetch(
+      `/api/stats/${slug}/country?period=${period}`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
     const data = await response.json();
 
     if (response.ok) {
@@ -285,11 +293,19 @@ export const fetchLinkLocationData = async (slug, userId, token) => {
   }
 };
 
-export const fetchLinkReferrerData = async (slug, userId, token) => {
+export const fetchLinkReferrerData = async (
+  slug,
+  userId,
+  token,
+  period = "7d",
+) => {
   try {
-    const response = await fetch(`/api/stats/${slug}/referrer`, {
-      headers: getAuthHeaders(token),
-    });
+    const response = await fetch(
+      `/api/stats/${slug}/referrer?period=${period}`,
+      {
+        headers: getAuthHeaders(token),
+      },
+    );
     const data = await response.json();
 
     if (response.ok) {
@@ -308,9 +324,9 @@ export const fetchLinkReferrerData = async (slug, userId, token) => {
   }
 };
 
-export const fetchLinkOSData = async (slug, userId, token) => {
+export const fetchLinkOSData = async (slug, userId, token, period = "7d") => {
   try {
-    const response = await fetch(`/api/stats/${slug}/os`, {
+    const response = await fetch(`/api/stats/${slug}/os?period=${period}`, {
       headers: getAuthHeaders(token),
     });
     const data = await response.json();
@@ -328,9 +344,9 @@ export const fetchLinkOSData = async (slug, userId, token) => {
   }
 };
 
-export const fetchLinkBotData = async (slug, userId, token) => {
+export const fetchLinkBotData = async (slug, userId, token, period = "7d") => {
   try {
-    const response = await fetch(`/api/stats/${slug}/bots`, {
+    const response = await fetch(`/api/stats/${slug}/bots?period=${period}`, {
       headers: getAuthHeaders(token),
     });
     const data = await response.json();

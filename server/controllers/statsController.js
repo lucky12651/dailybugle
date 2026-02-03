@@ -5,7 +5,8 @@ const statsController = {
   async getOsStats(req, res) {
     try {
       const { slug } = req.params;
-      const stats = await StatsService.getOsStats(slug);
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getOsStats(slug, period);
       res.json(stats);
     } catch (error) {
       console.error("OS stats error:", error);
@@ -29,7 +30,8 @@ const statsController = {
   async getReferrerStats(req, res) {
     try {
       const { slug } = req.params;
-      const stats = await StatsService.getReferrerStats(slug);
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getReferrerStats(slug, period);
       res.json(stats);
     } catch (error) {
       console.error("Referrer stats error:", error);
@@ -41,7 +43,8 @@ const statsController = {
   async getBotStats(req, res) {
     try {
       const { slug } = req.params;
-      const stats = await StatsService.getBotStats(slug);
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getBotStats(slug, period);
       res.json(stats);
     } catch (error) {
       console.error("Bot stats error:", error);
@@ -66,7 +69,8 @@ const statsController = {
   async getCountryStats(req, res) {
     try {
       const { slug } = req.params;
-      const stats = await StatsService.getCountryStats(slug);
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getCountryStats(slug, period);
       res.json(stats);
     } catch (error) {
       console.error("Country stats error:", error);
@@ -91,7 +95,11 @@ const statsController = {
     try {
       const { slug, userId } = req.params;
       const { period = "30d" } = req.query;
-      const stats = await StatsService.getUserTrafficStats(slug, userId, period);
+      const stats = await StatsService.getUserTrafficStats(
+        slug,
+        userId,
+        period,
+      );
       res.json(stats);
     } catch (error) {
       console.error("User traffic stats error:", error);
@@ -137,6 +145,5 @@ const statsController = {
     }
   },
 };
-
 
 module.exports = statsController;
