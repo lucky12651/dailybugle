@@ -19,18 +19,18 @@ const BotAnalyticsSection = ({ botChartData }) => {
             <h4 className="text-sm font-semibold text-gray-800">
               Human vs Bot Traffic
             </h4>
-            <span className="text-xs font-bold text-green-500">
-              Live
-            </span>
+            <span className="text-xs font-bold text-green-500">Live</span>
           </div>
 
           {/* Chart */}
           <div className="flex justify-center">
-            <canvas
-              id="trafficTypeChart"
-              width="160"
-              height="160"
-            />
+            {total > 0 ? (
+              <canvas id="trafficTypeChart" width="160" height="160" />
+            ) : (
+              <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+                No traffic data available
+              </div>
+            )}
           </div>
 
           {/* Totals */}
@@ -50,15 +50,10 @@ const BotAnalyticsSection = ({ botChartData }) => {
           <div className="mb-3 flex justify-between text-xs text-gray-600">
             <span>
               Human{" "}
-              <span className="font-bold text-green-500">
-                {humanPct}%
-              </span>
+              <span className="font-bold text-green-500">{humanPct}%</span>
             </span>
             <span>
-              Bot{" "}
-              <span className="font-bold text-red-500">
-                {botPct}%
-              </span>
+              Bot <span className="font-bold text-red-500">{botPct}%</span>
             </span>
           </div>
 
@@ -88,11 +83,14 @@ const BotAnalyticsSection = ({ botChartData }) => {
             </div>
 
             <div className="flex justify-center">
-              <canvas
-                id="botCategoryChart"
-                width="160"
-                height="160"
-              />
+              {botChartData.botCategories.data &&
+              botChartData.botCategories.data.length > 0 ? (
+                <canvas id="botCategoryChart" width="160" height="160" />
+              ) : (
+                <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+                  No bot category data
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -101,20 +99,21 @@ const BotAnalyticsSection = ({ botChartData }) => {
         {botChartData.botNames && (
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-200 h-full">
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-800">
-                Top Bots
-              </h4>
+              <h4 className="text-sm font-semibold text-gray-800">Top Bots</h4>
               <p className="text-xs text-gray-500 mt-1">
                 Most frequent automated agents
               </p>
             </div>
 
             <div className="flex justify-center">
-              <canvas
-                id="botNameChart"
-                width="160"
-                height="160"
-              />
+              {botChartData.botNames.data &&
+              botChartData.botNames.data.length > 0 ? (
+                <canvas id="botNameChart" width="160" height="160" />
+              ) : (
+                <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+                  No bot data available
+                </div>
+              )}
             </div>
           </div>
         )}

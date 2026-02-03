@@ -114,13 +114,23 @@ class ClickModel {
     }
   }
 
-  static async findBySlug(slug, limit = null, offset = 0) {
+  static async findBySlug(slug, limit = null, offset = 0, period = null) {
     try {
-      let query = `SELECT * FROM clicks WHERE slug = $1 ORDER BY timestamp DESC`;
+      let query = `SELECT * FROM clicks WHERE slug = $1`;
       const params = [slug];
 
+      // Add period filtering if provided
+      if (period) {
+        const cutoffDate = this._getCutoffDate(period);
+        query += ` AND timestamp >= $2`;
+        params.push(cutoffDate);
+      }
+
+      query += ` ORDER BY timestamp DESC`;
+
       if (limit) {
-        query += ` LIMIT $2 OFFSET $3`;
+        const paramIndex = period ? 3 : 2;
+        query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limit, offset);
       }
 

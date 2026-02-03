@@ -157,10 +157,19 @@ export const fetchClickDetails = async (
   limit = 25,
   offset = 0,
   token,
+  period = null,
 ) => {
   try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append("limit", limit);
+    params.append("offset", offset);
+    if (period) {
+      params.append("period", period);
+    }
+
     const response = await fetch(
-      `/api/stats/${slug}/clicks?limit=${limit}&offset=${offset}`,
+      `/api/stats/${slug}/clicks?${params.toString()}`,
       {
         headers: getAuthHeaders(token),
       },
@@ -363,6 +372,76 @@ export const fetchLinkBotData = async (slug, userId, token, period = "7d") => {
     return {
       success: false,
       error: "Network error occurred while fetching bot data",
+    };
+  }
+};
+
+export const fetchChartDataWithPeriod = async (slug, period = "7d", token) => {
+  try {
+    const headers = getAuthHeaders(token);
+
+    // Fetch OS distribution with period
+    const osResponse = await fetch(`/api/stats/${slug}/os?period=${period}`, {
+      headers,
+    });
+    const osData = await osResponse.json();
+
+    // Fetch device distribution (no period support)
+    const deviceResponse = await fetch(`/api/stats/${slug}/device`, {
+      headers,
+    });
+    const deviceData = await deviceResponse.json();
+
+    // Combine OS and device data
+    const combinedOsData = {
+      labels: osData.labels,
+      data: osData.data,
+    };
+
+    // Fetch country distribution with period
+    const countryResponse = await fetch(
+      `/api/stats/${slug}/country?period=${period}`,
+      { headers },
+    );
+    const countryData = await countryResponse.json();
+
+    // Fetch referrer distribution with period
+    const referrerResponse = await fetch(
+      `/api/stats/${slug}/referrer?period=${period}`,
+      { headers },
+    );
+    const referrerData = await referrerResponse.json();
+
+    // Fetch bot analytics with period
+    const botResponse = await fetch(
+      `/api/stats/${slug}/bots?period=${period}`,
+      { headers },
+    );
+    const botData = await botResponse.json();
+
+    // Fetch user analytics (no period support)
+    const userResponse = await fetch(`/api/stats/${slug}/users`, {
+      headers,
+    });
+    const userData = await userResponse.json();
+
+    return {
+      osChartData: osResponse.ok ? combinedOsData : null,
+      deviceChartData: deviceResponse.ok ? deviceData : null,
+      countryChartData: countryResponse.ok ? countryData : null,
+      referrerChartData: referrerResponse.ok ? referrerData : null,
+      botChartData: botResponse.ok ? botData : null,
+      userChartData: userResponse.ok ? userData : null,
+    };
+  } catch (err) {
+    console.error("Error fetching chart stats with period:", err);
+    return {
+      osChartData: null,
+      deviceChartData: null,
+      countryChartData: null,
+      referrerChartData: null,
+      botChartData: null,
+      userChartData: null,
     };
   }
 };

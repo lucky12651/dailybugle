@@ -119,8 +119,9 @@ const urlController = {
       const { slug } = req.params;
       const limit = parseInt(req.query.limit) || 25;
       const offset = parseInt(req.query.offset) || 0;
+      const { period = "7d" } = req.query;
 
-      const clicks = await UrlService.getClickDetails(slug, limit, offset);
+      const clicks = await UrlService.getClickDetails(slug, limit, offset, period);
       res.json(clicks);
     } catch (error) {
       console.error("Click details error:", error);

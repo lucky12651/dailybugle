@@ -3,6 +3,7 @@ import {
   fetchTrafficStats,
   fetchClickDetails,
   fetchUserDailyTraffic,
+  fetchChartDataWithPeriod,
 } from "../helpers/apiHelpers";
 import {
   renderTrafficChart,
@@ -12,6 +13,9 @@ import {
   renderBotCategoryChart,
   renderBotNameChart,
   renderTrafficTypeChart,
+  renderOSDistributionChart,
+  renderDeviceDistributionChart,
+  renderLocationDistributionChart,
 } from "../helpers/chartHelpers";
 import Loader from "./Loader";
 import StatsHeader from "./statsModal/StatsHeader";
@@ -37,11 +41,22 @@ const StatsModal = ({
   token,
 }) => {
   const [trafficData, setTrafficData] = useState(null);
-  const [trafficPeriod, setTrafficPeriod] = useState("7d");
+  const [trafficPeriod, setTrafficPeriod] = useState("30d");
   const [loadingTraffic, setLoadingTraffic] = useState(false);
 
   const [dailyTrafficData, setDailyTrafficData] = useState(null);
   const [loadingDailyTraffic, setLoadingDailyTraffic] = useState(false);
+
+  // Period-based chart data states
+  const [periodChartData, setPeriodChartData] = useState({
+    osChartData: null,
+    deviceChartData: null,
+    countryChartData: null,
+    referrerChartData: null,
+    botChartData: null,
+    userChartData: null,
+  });
+  const [loadingPeriodCharts, setLoadingPeriodCharts] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [userTrafficData, setUserTrafficData] = useState(null);
@@ -63,6 +78,17 @@ const StatsModal = ({
     }
   }, [statsData]);
 
+  // Load period-based click details when traffic period changes
+  useEffect(() => {
+    if (showStats && slug) {
+      // Reset click details when period changes
+      setClickDetails([]);
+      setClickOffset(0);
+      setHasMoreClicks(true);
+      loadMoreClicks(true); // Load fresh data for new period
+    }
+  }, [trafficPeriod]);
+
   useEffect(() => {
     if (showStats && slug) fetchTrafficData();
   }, [showStats, slug, trafficPeriod]);
@@ -70,6 +96,10 @@ const StatsModal = ({
   useEffect(() => {
     if (showStats && slug) fetchDailyTrafficData();
   }, [showStats, slug]);
+
+  useEffect(() => {
+    if (showStats && slug) fetchPeriodChartData();
+  }, [showStats, slug, trafficPeriod]);
 
   useEffect(() => {
     if (trafficData) renderTrafficChart("trafficChart", trafficData);
@@ -81,23 +111,87 @@ const StatsModal = ({
   }, [dailyTrafficData]);
 
   useEffect(() => {
-    if (userChartData) renderUserDistributionChart("userChart", userChartData);
-  }, [userChartData]);
+    console.log("OS Chart data changed:", periodChartData.osChartData);
+    if (periodChartData.osChartData)
+      renderOSDistributionChart("osChart", periodChartData.osChartData);
+  }, [periodChartData.osChartData]);
 
   useEffect(() => {
-    if (referrerChartData)
-      renderReferrerDistributionChart("referrerChart", referrerChartData);
-  }, [referrerChartData]);
+    console.log("Device Chart data changed:", periodChartData.deviceChartData);
+    if (periodChartData.deviceChartData)
+      renderDeviceDistributionChart(
+        "deviceChart",
+        periodChartData.deviceChartData,
+      );
+  }, [periodChartData.deviceChartData]);
 
   useEffect(() => {
-    if (botChartData) {
-      renderTrafficTypeChart("trafficTypeChart", botChartData);
-      if (botChartData.botCategories)
-        renderBotCategoryChart("botCategoryChart", botChartData);
-      if (botChartData.botNames)
-        renderBotNameChart("botNameChart", botChartData);
+    if (periodChartData.countryChartData)
+      renderLocationDistributionChart(
+        "countryChart",
+        periodChartData.countryChartData,
+      );
+  }, [periodChartData.countryChartData]);
+
+  useEffect(() => {
+    if (periodChartData.userChartData)
+      renderUserDistributionChart("userChart", periodChartData.userChartData);
+  }, [periodChartData.userChartData]);
+
+  useEffect(() => {
+    if (periodChartData.referrerChartData)
+      renderReferrerDistributionChart(
+        "referrerChart",
+        periodChartData.referrerChartData,
+      );
+  }, [periodChartData.referrerChartData]);
+
+  useEffect(() => {
+    if (periodChartData.botChartData) {
+      try {
+        // Render traffic type chart (Human vs Bot)
+        if (
+          periodChartData.botChartData.trafficType &&
+          periodChartData.botChartData.trafficType.labels &&
+          periodChartData.botChartData.trafficType.data &&
+          periodChartData.botChartData.trafficType.data.length > 0
+        ) {
+          renderTrafficTypeChart(
+            "trafficTypeChart",
+            periodChartData.botChartData.trafficType,
+          );
+        }
+
+        // Render bot category chart
+        if (
+          periodChartData.botChartData.botCategories &&
+          periodChartData.botChartData.botCategories.labels &&
+          periodChartData.botChartData.botCategories.data &&
+          periodChartData.botChartData.botCategories.data.length > 0
+        ) {
+          renderBotCategoryChart(
+            "botCategoryChart",
+            periodChartData.botChartData.botCategories,
+          );
+        }
+
+        // Render bot name chart
+        if (
+          periodChartData.botChartData.botNames &&
+          periodChartData.botChartData.botNames.labels &&
+          periodChartData.botChartData.botNames.data &&
+          periodChartData.botChartData.botNames.data.length > 0
+        ) {
+          renderBotNameChart(
+            "botNameChart",
+            periodChartData.botChartData.botNames,
+          );
+        }
+      } catch (error) {
+        console.error("Error rendering bot charts:", error);
+      }
     }
-  }, [botChartData]);
+  }, [periodChartData.botChartData]);
 
   /* -------------------- ACTIONS -------------------- */
   const fetchTrafficData = async () => {
@@ -114,20 +208,40 @@ const StatsModal = ({
     setLoadingDailyTraffic(false);
   };
 
-  const loadMoreClicks = async () => {
+  const fetchPeriodChartData = async () => {
+    setLoadingPeriodCharts(true);
+    const chartData = await fetchChartDataWithPeriod(
+      slug,
+      trafficPeriod,
+      token,
+    );
+    console.log("Period chart data fetched:", chartData);
+    setPeriodChartData(chartData);
+    setLoadingPeriodCharts(false);
+  };
+
+  const loadMoreClicks = async (reset = false) => {
     if (loadingMoreClicks || !hasMoreClicks) return;
     setLoadingMoreClicks(true);
 
     const res = await fetchClickDetails(
       slug,
       CLICKS_PER_PAGE,
-      clickOffset,
+      reset ? 0 : clickOffset,
       token,
+      trafficPeriod,
     );
 
     if (res.success && res.data.length) {
-      setClickDetails((prev) => [...prev, ...res.data]);
-      setClickOffset((prev) => prev + res.data.length);
+      if (reset) {
+        // Reset with new data for period change
+        setClickDetails(res.data);
+        setClickOffset(res.data.length);
+      } else {
+        // Append data for pagination
+        setClickDetails((prev) => [...prev, ...res.data]);
+        setClickOffset((prev) => prev + res.data.length);
+      }
       if (res.data.length < CLICKS_PER_PAGE) setHasMoreClicks(false);
     } else {
       setHasMoreClicks(false);
@@ -188,29 +302,43 @@ const StatsModal = ({
 
                 {/* Charts Section */}
                 <div className="mt-6 space-y-6">
-                  {(osChartData ||
-                    deviceChartData ||
-                    countryChartData ||
-                    referrerChartData) && (
-                    <DistributionChartsSection
-                      osChartData={osChartData}
-                      deviceChartData={deviceChartData}
-                      countryChartData={countryChartData}
-                      referrerChartData={referrerChartData}
-                    />
-                  )}
+                  {loadingPeriodCharts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader />
+                      <p className="ml-2 text-gray-600">
+                        Loading chart data...
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {(periodChartData.osChartData ||
+                        periodChartData.deviceChartData ||
+                        periodChartData.countryChartData ||
+                        periodChartData.referrerChartData) && (
+                        <DistributionChartsSection
+                          osChartData={periodChartData.osChartData}
+                          deviceChartData={periodChartData.deviceChartData}
+                          countryChartData={periodChartData.countryChartData}
+                          referrerChartData={periodChartData.referrerChartData}
+                        />
+                      )}
 
-                  {/* User Analytics Section */}
-                  {userChartData && userChartData.userDetails && (
-                    <UserAnalyticsSection
-                      userChartData={userChartData}
-                      showUserTraffic={showUserTraffic}
-                    />
-                  )}
+                      {/* User Analytics Section */}
+                      {periodChartData.userChartData &&
+                        periodChartData.userChartData.userDetails && (
+                          <UserAnalyticsSection
+                            userChartData={periodChartData.userChartData}
+                            showUserTraffic={showUserTraffic}
+                          />
+                        )}
 
-                  {/* Bot Analytics Section */}
-                  {botChartData && (
-                    <BotAnalyticsSection botChartData={botChartData} />
+                      {/* Bot Analytics Section */}
+                      {periodChartData.botChartData && (
+                        <BotAnalyticsSection
+                          botChartData={periodChartData.botChartData}
+                        />
+                      )}
+                    </>
                   )}
 
                   {/* Traffic Over Time Chart */}

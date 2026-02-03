@@ -73,8 +73,8 @@ class UrlService {
     };
   }
 
-  static async getClickDetails(slug, limit = 25, offset = 0) {
-    const clickDetails = await ClickModel.findBySlug(slug, limit, offset);
+  static async getClickDetails(slug, limit = 25, offset = 0, period = "7d") {
+    const clickDetails = await ClickModel.findBySlug(slug, limit, offset, period);
     return this._processClickDetails(clickDetails);
   }
 
