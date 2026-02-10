@@ -47,7 +47,7 @@ const RecentLinks = ({
       </div>
 
       {displayedLinks.length > 0 ? (
-        <div className="bg-gray-50 rounded-xl max-h-[400px] overflow-y-auto border border-gray-100 flex flex-col">
+        <div className="bg-gray-50 rounded-xl max-h-[800px] overflow-y-auto border border-gray-100 flex flex-col">
           <ul className="divide-y divide-gray-200">
             {displayedLinks.map((link, index) => (
               <li key={link.slug}>

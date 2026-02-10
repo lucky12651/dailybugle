@@ -31,7 +31,7 @@ const UserPerformance = ({ token }) => {
   const [loadingMoreLinks, setLoadingMoreLinks] = useState(false);
   const [linksOffset, setLinksOffset] = useState(0);
   const [hasMoreLinks, setHasMoreLinks] = useState(true);
-  const LINKS_PER_PAGE = 15;
+  const LINKS_PER_PAGE = 30;
 
   // Selected Link Stats State (Line Chart Modal)
   const [selectedLink, setSelectedLink] = useState(null);

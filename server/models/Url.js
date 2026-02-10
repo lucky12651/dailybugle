@@ -3,16 +3,32 @@ const db = require("../postgresql");
 class UrlModel {
   static _mapRow(row) {
     if (!row) return null;
-    return {
-      slug: row.slug || row.short_code,
-      longUrl: row.long_url,
-      clicks: row.clicks,
-      createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-      updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
-      lastAccessed: row.last_accessed
-        ? new Date(row.last_accessed).toISOString()
-        : null,
-    };
+    try {
+      return {
+        slug: row.slug || row.short_code,
+        longUrl: row.long_url,
+        clicks: row.clicks,
+        createdAt: row.created_at
+          ? new Date(row.created_at).toISOString()
+          : null,
+        updatedAt: row.updated_at
+          ? new Date(row.updated_at).toISOString()
+          : null,
+        lastAccessed: row.last_accessed
+          ? new Date(row.last_accessed).toISOString()
+          : null,
+      };
+    } catch (err) {
+      console.error("Error mapping URL row:", err, row);
+      return {
+        slug: row.slug || row.short_code,
+        longUrl: row.long_url,
+        clicks: row.clicks,
+        createdAt: null,
+        updatedAt: null,
+        lastAccessed: null,
+      };
+    }
   }
 
   static async create({ slug, longUrl }) {

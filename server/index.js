@@ -75,23 +75,32 @@ const redirectHandler = async (req, res, next) => {
   const slug = req.params.slug;
   const userId = req.params.userId;
 
+  console.log(`[Redirect] Request for slug: ${slug}, userId: ${userId}`);
+
   const blockedRoutes = ["api", "dashboard", "stats", "analytics", "recent"];
-  if (blockedRoutes.includes(slug)) return next();
+  if (blockedRoutes.includes(slug)) {
+    console.log(`[Redirect] Slug '${slug}' is a blocked route. Skipping.`);
+    return next();
+  }
 
   try {
     const longUrl = await UrlService.handleRedirect(slug, req, userId);
 
-    if (!longUrl) return next();
+    if (!longUrl) {
+      console.log(`[Redirect] No URL found for slug: ${slug}`);
+      return next();
+    }
 
+    console.log(`[Redirect] Success: ${slug} -> ${longUrl}`);
     return res.redirect(301, longUrl);
   } catch (e) {
-    console.error("Redirect error:", e);
+    console.error("[Redirect] Critical error:", e);
     res.status(500).send("Server error");
   }
 };
 
-app.get("/:slug([A-Za-z0-9-_]+)", redirectHandler);
-app.get("/:slug([A-Za-z0-9-_]+)/:userId([A-Za-z0-9-_]+)", redirectHandler);
+app.get("/:slug([^/]+)", redirectHandler);
+app.get("/:slug([^/]+)/:userId([^/]+)", redirectHandler);
 
 // ===============================
 // 4. React Fallback

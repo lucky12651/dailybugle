@@ -74,7 +74,12 @@ class UrlService {
   }
 
   static async getClickDetails(slug, limit = 25, offset = 0, period = "7d") {
-    const clickDetails = await ClickModel.findBySlug(slug, limit, offset, period);
+    const clickDetails = await ClickModel.findBySlug(
+      slug,
+      limit,
+      offset,
+      period,
+    );
     return this._processClickDetails(clickDetails);
   }
 
@@ -116,8 +121,17 @@ class UrlService {
   /* ---------------- REDIRECT + TRACK ---------------- */
 
   static async handleRedirect(slug, req, userId = null) {
+    console.log(`[UrlService] Attempting redirect for slug: ${slug}`);
     const urlData = await UrlModel.findBySlug(slug);
-    if (!urlData) return null;
+
+    if (!urlData) {
+      console.log(`[UrlService] Slug not found in database: ${slug}`);
+      return null;
+    }
+
+    console.log(
+      `[UrlService] Found longUrl: ${urlData.longUrl} for slug: ${slug}`,
+    );
 
     const userAgent = req.get("User-Agent") || "";
     const rawIp = getClientIp(req);
@@ -166,7 +180,7 @@ class UrlService {
 
   /* ---------------- RECENT URLS ---------------- */
 
-  static async getRecentUrls(limit = 25, offset = 0) {
+  static async getRecentUrls(limit = 30, offset = 0) {
     const urls = await UrlModel.findAll({ limit, offset });
 
     return urls.map((data) => ({

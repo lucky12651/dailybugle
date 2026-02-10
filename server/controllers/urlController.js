@@ -65,7 +65,7 @@ const urlController = {
   async getRecent(req, res) {
     try {
       console.log("Recent links request received");
-      const limit = parseInt(req.query.limit) || 25;
+      const limit = parseInt(req.query.limit) || 30;
       const offset = parseInt(req.query.offset) || 0;
 
       const list = await UrlService.getRecentUrls(limit, offset);

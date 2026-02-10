@@ -45,7 +45,7 @@ const App = () => {
   const [recentLinksOffset, setRecentLinksOffset] = useState(0);
   const [loadingMoreRecentLinks, setLoadingMoreRecentLinks] = useState(false);
   const [hasMoreRecentLinks, setHasMoreRecentLinks] = useState(true);
-  const RECENT_LINKS_PER_PAGE = 25;
+  const RECENT_LINKS_PER_PAGE = 30;
   const [showSettings, setShowSettings] = useState(false);
 
   const [copiedIndex, setCopiedIndex] = useState(null);
