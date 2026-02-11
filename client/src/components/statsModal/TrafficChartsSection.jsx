@@ -1,5 +1,6 @@
 import React from "react";
 import Loader from "../Loader";
+import { Activity, BarChart } from "lucide-react";
 
 const TrafficChartsSection = ({
   trafficData,
@@ -10,105 +11,92 @@ const TrafficChartsSection = ({
   loadingDailyTraffic,
 }) => {
   return (
-    <>
-      <div className="grid grid-cols-1">
-        <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-5 rounded-xl border border-cyan-100 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-              Traffic Over Time
-            </h4>
-            <div className="flex mt-2 sm:mt-0 space-x-2">
-              {["24h", "3d", "7d", "30d"].map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setTrafficPeriod(period)}
-                  className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                    {
-                      "24h":
-                        "bg-blue-100 text-blue-800 hover:bg-blue-200",
-                      "3d": "bg-green-100 text-green-800 hover:bg-green-200",
-                      "7d": "bg-purple-100 text-purple-800 hover:bg-purple-200",
-                      "30d":
-                        "bg-orange-100 text-orange-800 hover:bg-orange-200",
-                    }[period] ||
-                    "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                  } ${
-                    trafficPeriod === period
-                      ? "ring-2 ring-offset-2 ring-current"
-                      : ""
-                  }`}
-                >
-                  {period}
-                </button>
-              ))}
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+          <h4 className="text-lg font-bold text-white flex items-center gap-2">
+            <Activity className="text-green-500" size={20} />
+            Traffic Over Time
+          </h4>
+          <div className="flex bg-black p-1 rounded-xl border border-zinc-800">
+            {["24h", "3d", "7d", "30d"].map((period) => (
+              <button
+                key={period}
+                onClick={() => setTrafficPeriod(period)}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  trafficPeriod === period
+                    ? "bg-green-600 text-black shadow-lg shadow-green-600/20"
+                    : "text-zinc-500 hover:text-white"
+                }`}
+              >
+                {period.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-72">
+          {loadingTraffic ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <Loader />
+              <p className="text-sm text-zinc-500">Loading traffic data...</p>
             </div>
-          </div>
-          <div className="h-64">
-            {loadingTraffic ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader />
+          ) : trafficData ? (
+            <>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-white">
+                  {trafficData.total.toLocaleString()}
+                </span>
+                <span className="text-sm text-zinc-500 font-medium">
+                  total clicks in period
+                </span>
               </div>
-            ) : trafficData ? (
-              <>
-                <div className="mb-2 text-center">
-                  <span className="text-2xl font-bold text-blue-600">
-                    {trafficData.total}
-                  </span>
-                  <span className="text-gray-600 ml-2">
-                    total clicks
-                  </span>
-                </div>
-                <canvas
-                  id="trafficChart"
-                  width="400"
-                  height="200"
-                ></canvas>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                No traffic data available
+              <div className="h-48">
+                <canvas id="trafficChart"></canvas>
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-zinc-600 border-2 border-dashed border-zinc-800 rounded-xl">
+              No traffic data available
+            </div>
+          )}
         </div>
       </div>
-      <div className="grid grid-cols-1">
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-xl border border-indigo-100 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-              Views Per Day (IST)
-            </h4>
-          </div>
-          <div className="h-64">
-            {loadingDailyTraffic ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader />
+
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+          <h4 className="text-lg font-bold text-white flex items-center gap-2">
+            <BarChart className="text-green-500" size={20} />
+            Views Per Day
+          </h4>
+        </div>
+        <div className="h-72">
+          {loadingDailyTraffic ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <Loader />
+              <p className="text-sm text-zinc-500">Loading daily views...</p>
+            </div>
+          ) : dailyTrafficData ? (
+            <>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-white">
+                  {dailyTrafficData.total.toLocaleString()}
+                </span>
+                <span className="text-sm text-zinc-500 font-medium">
+                  total views (last 45 days)
+                </span>
               </div>
-            ) : dailyTrafficData ? (
-              <>
-                <div className="mb-2 text-center">
-                  <span className="text-2xl font-bold text-blue-600">
-                    {dailyTrafficData.total}
-                  </span>
-                  <span className="text-gray-600 ml-2">
-                    total views (last 45 days)
-                  </span>
-                </div>
-                <canvas
-                  id="dailyViewsChart"
-                  width="400"
-                  height="200"
-                ></canvas>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                No daily views data available
+              <div className="h-48">
+                <canvas id="dailyViewsChart"></canvas>
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-zinc-600 border-2 border-dashed border-zinc-800 rounded-xl">
+              No daily data available
+            </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

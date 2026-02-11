@@ -1,5 +1,13 @@
 import React from "react";
 import Loader from "../Loader";
+import {
+  Info,
+  BarChart3,
+  ChevronDown,
+  Link as LinkIcon,
+  Eye,
+  Clock,
+} from "lucide-react";
 
 const LinksTable = ({
   userLinks,
@@ -14,107 +22,112 @@ const LinksTable = ({
 }) => {
   if (loadingLinks && userLinks.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm p-8 flex justify-center">
+      <div className="bg-zinc-900/50 border border-zinc-900 rounded-2xl overflow-hidden p-12 flex justify-center">
         <Loader />
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-        <h4 className="text-lg font-semibold text-gray-800">Accessed Links</h4>
+    <div className="bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="px-6 py-4 border-b border-zinc-900 bg-zinc-900/30 flex items-center justify-between">
+        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+          <LinkIcon size={16} className="text-green-500" />
+          Accessed Links
+        </h4>
+        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          {userLinks.length} Active Slugs
+        </span>
       </div>
 
       {userLinks.length > 0 ? (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="min-w-full divide-y divide-zinc-900">
+              <thead className="bg-zinc-900/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Link
+                  <th className="px-6 py-4 text-left text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <LinkIcon size={12} />
+                      Link Slug
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Views
+                  <th className="px-6 py-4 text-left text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Eye size={12} />
+                      Views
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Accessed
+                  <th className="px-6 py-4 text-left text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Clock size={12} />
+                      Last Accessed
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {userLinks.map((link, index) => (
+              <tbody className="divide-y divide-zinc-900 bg-zinc-950">
+                {userLinks.map((link) => (
                   <tr
-                    key={`${link.slug}-${index}`}
-                    className={`hover:bg-gray-50 transition-colors ${selectedLink?.slug === link.slug ? "bg-blue-50/50" : ""}`}
+                    key={link.slug}
+                    className={`group hover:bg-zinc-900/40 transition-colors ${
+                      selectedLink?.slug === link.slug ||
+                      dailyLink?.slug === link.slug
+                        ? "bg-zinc-900/60"
+                        : ""
+                    }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                      /{link.slug}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-bold text-green-500 group-hover:text-green-400 transition-colors">
+                        /{link.slug}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {link.views}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-black text-white">
+                        {link.views}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {link.lastAccessed
-                        ? new Date(link.lastAccessed).toLocaleString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                          })
-                        : "N/A"}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-xs text-zinc-400 font-medium">
+                        {link.lastAccessed
+                          ? new Date(link.lastAccessed).toLocaleString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                                day: "2-digit",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )
+                          : "N/A"}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setSelectedLink(link)}
-                          className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                             selectedLink?.slug === link.slug
-                              ? "bg-blue-600 text-white"
-                              : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                              ? "bg-blue-600 text-black border-blue-600"
+                              : "bg-zinc-900 text-blue-500 border-zinc-800 hover:border-blue-500/50 hover:bg-blue-500/5"
                           }`}
-                          title="Detailed Analysis"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3.5 w-3.5 mr-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
+                          <Info size={14} className="mr-1.5" />
                           Info
                         </button>
                         <button
                           onClick={() => setDailyLink(link)}
-                          className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                             dailyLink?.slug === link.slug
-                              ? "bg-emerald-600 text-white"
-                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                              ? "bg-emerald-600 text-black border-emerald-600"
+                              : "bg-zinc-900 text-emerald-500 border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5"
                           }`}
-                          title="Daily Views (30d)"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3.5 w-3.5 mr-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                            />
-                          </svg>
+                          <BarChart3 size={14} className="mr-1.5" />
                           Daily
                         </button>
                       </div>
@@ -126,20 +139,35 @@ const LinksTable = ({
           </div>
 
           {hasMoreLinks && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 text-center">
+            <div className="px-6 py-4 border-t border-zinc-900 bg-zinc-900/20 text-center">
               <button
                 onClick={handleLoadMoreLinks}
                 disabled={loadingMoreLinks}
-                className="text-blue-600 hover:text-blue-800 font-medium text-sm disabled:opacity-50"
+                className="inline-flex items-center gap-2 text-zinc-400 hover:text-white font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-colors py-2 px-4 rounded-xl hover:bg-zinc-800"
               >
-                {loadingMoreLinks ? "Loading..." : "Show More"}
+                {loadingMoreLinks ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  <>
+                    Show More
+                    <ChevronDown size={14} />
+                  </>
+                )}
               </button>
             </div>
           )}
         </>
       ) : (
-        <div className="p-8 text-center text-gray-500">
-          No links found for this user
+        <div className="p-16 text-center">
+          <div className="inline-flex p-4 bg-zinc-900 rounded-full mb-4">
+            <LinkIcon size={32} className="text-zinc-700" />
+          </div>
+          <p className="text-zinc-500 text-sm font-medium">
+            No active slugs found for this user
+          </p>
         </div>
       )}
     </div>

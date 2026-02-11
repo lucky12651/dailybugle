@@ -1,50 +1,54 @@
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { QrCode, Download } from "lucide-react";
 
 const QRCodeGenerator = ({ qrUrl, setQrUrl, downloadQRCode }) => {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <QrCode className="text-green-500" />
         Generate QR Code
       </h2>
-      {/* <p className="text-gray-600 text-sm mb-6">Create a QR code for any URL</p> */}
 
-      <label
-        htmlFor="qrUrl"
-        className="block text-sm font-medium text-gray-700 mb-2"
-      >
-        Enter URL to generate QR code
-      </label>
-      <input
-        type="url"
-        id="qrUrl"
-        value={qrUrl}
-        onChange={(e) => setQrUrl(e.target.value)}
-        placeholder="https://example.com/my-url"
-        className="w-full px-6 py-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder-gray-500 transition-all duration-200"
-      />
-
-      {qrUrl && (
-        <div className="flex flex-col items-center space-y-4">
-          <div className="p-4 bg-white rounded-lg border border-gray-200">
-            <QRCodeSVG
-              value={qrUrl}
-              size={200}
-              level="H"
-              includeMargin={true}
-              id="qr-code-svg"
-            />
-          </div>
-          <button
-            onClick={() => {
-              downloadQRCode("qr-code-svg");
-            }}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors duration-200"
+      <div className="space-y-4">
+        <div>
+          <label
+            htmlFor="qrUrl"
+            className="block text-sm font-medium text-zinc-400 mb-2"
           >
-            Download QR Code
-          </button>
+            Enter URL to generate QR code
+          </label>
+          <input
+            type="url"
+            id="qrUrl"
+            value={qrUrl}
+            onChange={(e) => setQrUrl(e.target.value)}
+            placeholder="https://example.com/my-url"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 text-white placeholder-zinc-600 transition-all"
+          />
         </div>
-      )}
+
+        {qrUrl && (
+          <div className="flex flex-col items-center space-y-6 pt-4">
+            <div className="p-6 bg-white rounded-2xl shadow-xl shadow-white/5 border border-zinc-200">
+              <QRCodeSVG
+                id="qr-code-svg"
+                value={qrUrl}
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            <button
+              onClick={() => downloadQRCode("qr-code-svg")}
+              className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-black rounded-xl font-bold transition-all group"
+            >
+              <Download size={18} />
+              Download QR Code
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

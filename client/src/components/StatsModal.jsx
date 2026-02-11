@@ -25,6 +25,7 @@ import UserAnalyticsSection from "./statsModal/UserAnalyticsSection";
 import BotAnalyticsSection from "./statsModal/BotAnalyticsSection";
 import ClickDetailsSection from "./statsModal/ClickDetailsSection";
 import UserTrafficModal from "./statsModal/UserTrafficModal";
+import { X, BarChart3 } from "lucide-react";
 
 const StatsModal = ({
   showStats,
@@ -267,28 +268,40 @@ const StatsModal = ({
   if (!showStats) return null;
   return (
     showStats && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[98vh] overflow-y-auto shadow-2xl">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl max-w-4xl w-full max-h-[98vh] overflow-y-auto shadow-2xl shadow-black custom-scrollbar">
           <div className="p-6">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
-                Link Statistics
-              </h3>
+            <div className="flex justify-between items-center mb-8 pb-4 border-b border-zinc-900">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-600/10 rounded-lg">
+                  <BarChart3 className="text-green-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    Link Statistics
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
+                    Detailed Analytics
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={closeStatsModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-zinc-800 transition-all"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
             {loadingStats ? (
-              <div className="text-center py-8">
+              <div className="text-center py-20">
                 <Loader />
-                <p className="mt-2 text-gray-600">Loading stats...</p>
+                <p className="mt-4 text-zinc-500 animate-pulse">
+                  Analyzing link data...
+                </p>
               </div>
             ) : statsData ? (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <StatsHeader statsData={statsData} />
 
                 <TrafficChartsSection
@@ -301,12 +314,12 @@ const StatsModal = ({
                 />
 
                 {/* Charts Section */}
-                <div className="mt-6 space-y-6">
+                <div className="space-y-8">
                   {loadingPeriodCharts ? (
-                    <div className="flex items-center justify-center py-8">
+                    <div className="flex flex-col items-center justify-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-900">
                       <Loader />
-                      <p className="ml-2 text-gray-600">
-                        Loading chart data...
+                      <p className="mt-4 text-zinc-500">
+                        Generating distribution charts...
                       </p>
                     </div>
                   ) : (
@@ -340,8 +353,6 @@ const StatsModal = ({
                       )}
                     </>
                   )}
-
-                  {/* Traffic Over Time Chart */}
                 </div>
 
                 <ClickDetailsSection

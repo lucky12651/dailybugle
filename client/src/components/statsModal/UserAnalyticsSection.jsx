@@ -1,4 +1,5 @@
 import React from "react";
+import { Users, Info, ArrowRight, Eye, Calendar } from "lucide-react";
 
 const UserAnalyticsSection = ({ userChartData, showUserTraffic }) => {
   if (!userChartData || !userChartData.userDetails) return null;
@@ -6,84 +7,81 @@ const UserAnalyticsSection = ({ userChartData, showUserTraffic }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
       {/* Top Users Chart */}
-      <div className="bg-gradient-to-br from-teal-50 to-green-50 p-5 rounded-xl border border-teal-100 shadow-sm h-full min-h-[400px]">
-        <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          Top Users
-        </h4>
-        <div className="flex justify-center h-[300px] items-center">
-          <canvas
-            id="userChart"
-            width="250"
-            height="250"
-          ></canvas>
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col min-h-[400px]">
+        <div className="flex items-center gap-2 mb-8">
+          <div className="p-2 bg-green-600/10 rounded-lg">
+            <Users className="text-green-500" size={20} />
+          </div>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+            Top Users
+          </h4>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-[250px] aspect-square">
+            <canvas id="userChart"></canvas>
+          </div>
         </div>
       </div>
 
       {/* User Details List */}
-      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-full min-h-[400px] flex flex-col">
-        <h4 className="text-lg font-semibold text-gray-800 mb-4">
-          User Details
-        </h4>
-        <div className="overflow-y-auto flex-1 pr-2 max-h-[320px]">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col min-h-[400px]">
+        <div className="flex items-center gap-2 mb-8">
+          <div className="p-2 bg-blue-600/10 rounded-lg">
+            <Info className="text-blue-500" size={20} />
+          </div>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+            User Details
+          </h4>
+        </div>
+        <div className="overflow-y-auto flex-1 custom-scrollbar -mr-2 pr-2">
+          <table className="w-full text-left">
+            <thead className="sticky top-0 bg-zinc-900 z-10">
+              <tr className="border-b border-zinc-800">
+                <th className="pb-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   User ID
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="pb-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">
                   Views
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Last Active
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="pb-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">
                   Action
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-zinc-800/50">
               {userChartData.userDetails.map((user, idx) => (
-                <tr key={idx}>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-medium">
-                    {user.userId}
+                <tr key={idx} className="group hover:bg-white/5 transition-colors">
+                  <td className="py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-mono text-zinc-300 group-hover:text-white transition-colors">
+                        {user.userId}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                        <Calendar size={10} />
+                        {user.lastFetched
+                          ? new Date(user.lastFetched).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A"}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                    {user.views}
+                  <td className="py-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5 text-zinc-300">
+                      <Eye size={12} className="text-zinc-500" />
+                      <span className="text-sm font-bold">{user.views}</span>
+                    </div>
                   </td>
-                  <td className="px-1 py-3 whitespace-nowrap text-sm text-gray-600">
-                    {user.lastFetched
-                      ? new Date(
-                          user.lastFetched,
-                        ).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                        }) +
-                        ", " +
-                        new Date(
-                          user.lastFetched,
-                        ).toLocaleTimeString("en-IN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-center">
+                  <td className="py-4 text-right">
                     <button
-                      onClick={() =>
-                        showUserTraffic(user.userId)
-                      }
-                      className="text-blue-600 hover:text-blue-800  font-medium"
+                      onClick={() => showUserTraffic(user.userId)}
+                      className="p-2 bg-zinc-800 hover:bg-green-600 text-zinc-400 hover:text-black rounded-lg transition-all"
+                      title="View Details"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        height="24px"
-                        viewBox="0 -960 960 960"
-                        width="24px"
-                        fill="#0000F5"
-                      >
-                        <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
-                      </svg>
+                      <ArrowRight size={14} />
                     </button>
                   </td>
                 </tr>

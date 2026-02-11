@@ -11,6 +11,7 @@ import LinkInfoModal from "./UserPerformanceParts/LinkInfoModal";
 import DailyViewsModal from "./UserPerformanceParts/DailyViewsModal";
 import LinkGeneratorModal from "./UserPerformanceParts/LinkGeneratorModal";
 import Loader from "./Loader";
+import { Users, Plus } from "lucide-react";
 
 const UserPerformance = ({ token }) => {
   const [users, setUsers] = useState([]);
@@ -173,7 +174,7 @@ const UserPerformance = ({ token }) => {
 
   if (loadingUsers && users.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 mt-8 flex justify-center">
+      <div className="bg-zinc-950 border border-zinc-900 rounded-2xl shadow-2xl shadow-zinc-950/50 p-8 mt-8 flex justify-center">
         <Loader />
       </div>
     );
@@ -185,42 +186,31 @@ const UserPerformance = ({ token }) => {
 
   return (
     <>
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-8 mt-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <h2 className="text-xl font-semibold text-gray-800">
+      <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-4 sm:p-8 mt-8 shadow-2xl shadow-zinc-950/50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Users className="text-green-500" size={20} />
             User Performance
           </h2>
           <button
             onClick={() => setIsLinkGeneratorOpen(true)}
-            className="flex items-center justify-center space-x-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium rounded-xl transition-colors border border-indigo-100 shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded-xl transition-all shadow-lg shadow-green-600/10"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-              />
-            </svg>
+            <Plus size={18} />
+            <span>Generate Link</span>
           </button>
         </div>
 
         {/* User Tabs */}
-        <div className="flex overflow-x-auto space-x-2 mb-8 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="flex overflow-x-auto space-x-2 mb-8 pb-2 custom-scrollbar">
           {users.map((user) => (
             <button
               key={user}
               onClick={() => setSelectedUser(user)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all border ${
                 selectedUser === user
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-green-600/10 text-green-500 border-green-500/20 shadow-lg shadow-green-500/5"
+                  : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-white hover:border-zinc-700"
               }`}
             >
               {user}
@@ -236,7 +226,6 @@ const UserPerformance = ({ token }) => {
               trafficData={trafficData}
               loadingTraffic={loadingTraffic}
             />
-
             <LinksTable
               userLinks={userLinks}
               loadingLinks={loadingLinks}
@@ -265,20 +254,20 @@ const UserPerformance = ({ token }) => {
             setLinkTrafficData={setLinkTrafficData}
             token={token}
           />
-
           <DailyViewsModal
             dailyLink={dailyLink}
             setDailyLink={setDailyLink}
-            selectedUser={selectedUser}
             dailyTrafficData={dailyTrafficData}
             loadingDailyTraffic={loadingDailyTraffic}
             setDailyTrafficData={setDailyTrafficData}
+            selectedUser={selectedUser}
           />
-
           <LinkGeneratorModal
             isOpen={isLinkGeneratorOpen}
-            onClose={() => setIsLinkGeneratorOpen(false)}
-            initialUserId={selectedUser}
+            setIsOpen={setIsLinkGeneratorOpen}
+            selectedUser={selectedUser}
+            token={token}
+            onLinkGenerated={() => loadLinks(0, true)}
           />
         </>
       )}
