@@ -27,7 +27,7 @@ const RecentLinks = ({
   const displayedLinks = searchResults !== null ? searchResults : recentLinks;
 
   return (
-    <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-4 sm:p-8 flex flex-col h-full max-h-[800px]">
+    <div className="bg-zinc-950 border border-zinc-900 rounded-md p-1 sm:p-2 flex flex-col h-full max-h-[465px]">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <History className="text-green-500" size={20} />
@@ -42,7 +42,10 @@ const RecentLinks = ({
 
       <div className="mb-6 flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+            size={18}
+          />
           <input
             type="text"
             value={searchQuery}
@@ -79,7 +82,10 @@ const RecentLinks = ({
                     className="text-green-500 font-bold hover:underline flex items-center gap-1 truncate"
                   >
                     {link.shortUrl}
-                    <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ExternalLink
+                      size={12}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
                   </a>
                 </div>
                 <div className="flex items-center gap-2">

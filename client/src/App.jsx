@@ -35,7 +35,12 @@ import UserPerformance from "./components/UserPerformance";
 import { Settings as SettingsIcon, LogOut } from "lucide-react";
 
 const App = () => {
-  const [token, setToken] = useState(localStorage.getItem("authToken"));
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem("authToken");
+    return savedToken && savedToken !== "null" && savedToken !== "undefined"
+      ? savedToken
+      : null;
+  });
   const [longUrl, setLongUrl] = useState("");
   const [customSlug, setCustomSlug] = useState("");
   const [userId, setUserId] = useState("");
@@ -256,9 +261,9 @@ const App = () => {
               />
             </div>
           ) : (
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                <div className="lg:col-span-3 bg-zinc-950 border border-zinc-900 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-green-500/5">
+                <div className="lg:col-span-3 bg-zinc-950 border border-zinc-900 rounded-md p-6 sm:p-10 shadow-2xl shadow-green-500/5">
                   <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
                   <div className="mt-8">
                     {activeTab === "link" ? (

@@ -197,7 +197,7 @@ const UserPerformance = ({ token }) => {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded-xl transition-all shadow-lg shadow-green-600/10"
           >
             <Plus size={18} />
-            <span>Generate Link</span>
+            <span>Convert Link</span>
           </button>
         </div>
 

@@ -3,6 +3,31 @@ const getAuthHeaders = (token) => ({
   Authorization: token ? `Bearer ${token}` : "",
 });
 
+const handleResponse = async (response) => {
+  if (response.status === 401 || response.status === 400) {
+    const data = await response.json();
+    if (
+      data.error === "Invalid token." ||
+      data.error === "Token expired." ||
+      data.error === "Access denied. No token provided."
+    ) {
+      return { success: false, authError: true, error: data.error };
+    }
+  }
+
+  if (response.ok) {
+    const data = await response.json();
+    return { success: true, data };
+  }
+
+  try {
+    const errorData = await response.json();
+    return { success: false, error: errorData.error || "Request failed" };
+  } catch (e) {
+    return { success: false, error: "Request failed" };
+  }
+};
+
 // API Helper Functions
 export const fetchRecentLinks = async (limit = 25, offset = 0, token) => {
   try {
@@ -12,9 +37,11 @@ export const fetchRecentLinks = async (limit = 25, offset = 0, token) => {
         headers: getAuthHeaders(token),
       },
     );
-    if (response.ok) {
-      const data = await response.json();
-      return data;
+    const result = await handleResponse(response);
+    if (result.success) return result.data;
+    if (result.authError) {
+      // Potentially trigger global logout if we had a way to do it here
+      console.warn("Auth error in fetchRecentLinks:", result.error);
     }
     return [];
   } catch (err) {
@@ -34,13 +61,7 @@ export const shortenUrl = async (longUrl, customSlug, token) => {
       }),
     });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return { success: false, error: data.error || "An error occurred" };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return { success: false, error: "Network error occurred" };
   }
@@ -51,13 +72,7 @@ export const fetchLinkStats = async (slug, token) => {
     const response = await fetch(`/api/stats/${slug}`, {
       headers: getAuthHeaders(token),
     });
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return { success: false, error: data.error || "Failed to fetch stats" };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
@@ -134,16 +149,7 @@ export const fetchTrafficStats = async (slug, period = "7d", token) => {
         headers: getAuthHeaders(token),
       },
     );
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return {
-        success: false,
-        error: data.error || "Failed to fetch traffic stats",
-      };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
@@ -228,11 +234,7 @@ export const fetchAllUsers = async (token) => {
     const response = await fetch("/api/users", {
       headers: getAuthHeaders(token),
     });
-    if (response.ok) {
-      const data = await response.json();
-      return { success: true, data };
-    }
-    return { success: false, error: "Failed to fetch users" };
+    return await handleResponse(response);
   } catch (err) {
     return { success: false, error: "Network error" };
   }
@@ -244,11 +246,7 @@ export const fetchGlobalUserTraffic = async (userId, period = "7d", token) => {
       `/api/users/${userId}/traffic?period=${period}`,
       { headers: getAuthHeaders(token) },
     );
-    if (response.ok) {
-      const data = await response.json();
-      return { success: true, data };
-    }
-    return { success: false, error: "Failed to fetch traffic" };
+    return await handleResponse(response);
   } catch (err) {
     return { success: false, error: "Network error" };
   }
@@ -260,11 +258,7 @@ export const fetchUserLinks = async (userId, limit = 15, offset = 0, token) => {
       `/api/users/${userId}/links?limit=${limit}&offset=${offset}`,
       { headers: getAuthHeaders(token) },
     );
-    if (response.ok) {
-      const data = await response.json();
-      return { success: true, data };
-    }
-    return { success: false, error: "Failed to fetch links" };
+    return await handleResponse(response);
   } catch (err) {
     return { success: false, error: "Network error" };
   }
@@ -284,16 +278,7 @@ export const fetchLinkLocationData = async (
         headers: getAuthHeaders(token),
       },
     );
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return {
-        success: false,
-        error: data.error || "Failed to fetch location data",
-      };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
@@ -315,16 +300,7 @@ export const fetchLinkReferrerData = async (
         headers: getAuthHeaders(token),
       },
     );
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return {
-        success: false,
-        error: data.error || "Failed to fetch referrer data",
-      };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
@@ -338,13 +314,7 @@ export const fetchLinkOSData = async (slug, userId, token, period = "7d") => {
     const response = await fetch(`/api/stats/${slug}/os?period=${period}`, {
       headers: getAuthHeaders(token),
     });
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return { success: false, error: data.error || "Failed to fetch OS data" };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
@@ -358,16 +328,7 @@ export const fetchLinkBotData = async (slug, userId, token, period = "7d") => {
     const response = await fetch(`/api/stats/${slug}/bots?period=${period}`, {
       headers: getAuthHeaders(token),
     });
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, data };
-    } else {
-      return {
-        success: false,
-        error: data.error || "Failed to fetch bot data",
-      };
-    }
+    return await handleResponse(response);
   } catch (err) {
     return {
       success: false,
