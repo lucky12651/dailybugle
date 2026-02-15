@@ -89,10 +89,15 @@ const LinkForm = ({
           disabled={loading}
           className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-black rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
         >
-          {loading ? "Processing..." : (
+          {loading ? (
+            "Processing..."
+          ) : (
             <>
               Get your link
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight
+                size={18}
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </>
           )}
         </button>
@@ -116,7 +121,12 @@ const LinkForm = ({
               </p>
             </div>
             <button
-              onClick={() => copyToClipboard(shortUrl)}
+              type="button"
+              onClick={() => {
+                copyToClipboard(shortUrl);
+                setCopiedIndex("generated");
+                setTimeout(() => setCopiedIndex(null), 2000);
+              }}
               className="px-4 py-2 bg-green-600 hover:bg-green-500 text-black rounded-lg text-sm font-bold transition-all"
             >
               {copiedIndex !== null ? "Copied!" : "Copy"}

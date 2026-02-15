@@ -145,31 +145,6 @@ class ClickModel {
     return this.findBySlug(slug);
   }
 
-  // Helper method to get cutoff date based on period
-  static _getCutoffDate(period) {
-    const now = new Date();
-    let cutoffDate;
-
-    switch (period) {
-      case "24h":
-        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case "3d":
-        cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-        break;
-      case "7d":
-        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case "30d":
-        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    }
-
-    return cutoffDate;
-  }
-
   static async getOsStats(slug, period = "7d") {
     try {
       const clicks = await this.findAllBySlug(slug);
@@ -473,7 +448,9 @@ class ClickModel {
               ? 7
               : period === "45d"
                 ? 45
-                : 30;
+                : period === "120d"
+                  ? 120
+                  : 30;
         for (let i = days - 1; i >= 0; i--) {
           const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
           const dayKey = dayKeyFromDate(dayTime);
@@ -716,6 +693,152 @@ class ClickModel {
         userId,
       ]);
       return result.rows.map(ClickModel._mapRow);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static _getCutoffDate(period) {
+    const now = new Date();
+    switch (period) {
+      case "24h":
+        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case "3d":
+        return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      case "7d":
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "45d":
+        return new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+      case "120d":
+        return new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000);
+      case "30d":
+        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      default:
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+  }
+
+  static async getGlobalTraffic(period = "7d") {
+    try {
+      const cutoffDate = this._getCutoffDate(period);
+      const result = await db.query(
+        `SELECT timestamp FROM clicks WHERE timestamp >= $1`,
+        [cutoffDate],
+      );
+      const clicks = result.rows;
+
+      const now = new Date();
+      const locale = "en-IN";
+      const timeZone = "Asia/Kolkata";
+      const hourFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        hour12: false,
+      });
+      const dayFormatter = new Intl.DateTimeFormat(locale, {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const hourKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          hourFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:00:00`;
+      };
+      const dayKeyFromDate = (d) => {
+        const parts = Object.fromEntries(
+          dayFormatter.formatToParts(d).map((p) => [p.type, p.value]),
+        );
+        return `${parts.year}-${parts.month}-${parts.day}`;
+      };
+
+      const clicksByTime = {};
+      clicks.forEach((click) => {
+        if (click.timestamp) {
+          const clickTime = new Date(click.timestamp);
+          let timeKey;
+
+          if (period === "24h") {
+            timeKey = hourKeyFromDate(clickTime);
+          } else {
+            timeKey = dayKeyFromDate(clickTime);
+          }
+
+          clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
+        }
+      });
+
+      const timeLabels = [];
+      const clickCounts = [];
+
+      if (period === "24h") {
+        for (let i = 23; i >= 0; i--) {
+          const hourTime = new Date(now.getTime() - i * 60 * 60 * 1000);
+          const hourKey = hourKeyFromDate(hourTime);
+          timeLabels.push(
+            hourTime.toLocaleTimeString("en-IN", {
+              timeZone,
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }),
+          );
+          clickCounts.push(clicksByTime[hourKey] || 0);
+        }
+      } else {
+        let days =
+          period === "3d"
+            ? 3
+            : period === "7d"
+              ? 7
+              : period === "45d"
+                ? 45
+                : period === "120d"
+                  ? 120
+                  : 30;
+
+        if (period === "120d") {
+          const minDateResult = await db.query(
+            "SELECT MIN(timestamp) as first_timestamp FROM clicks"
+          );
+          if (minDateResult.rows[0]?.first_timestamp) {
+            const firstTimestamp = new Date(minDateResult.rows[0].first_timestamp);
+            const startOfDayFirst = new Date(firstTimestamp);
+            startOfDayFirst.setHours(0, 0, 0, 0);
+            const startOfDayNow = new Date(now);
+            startOfDayNow.setHours(0, 0, 0, 0);
+            const diffTime = startOfDayNow - startOfDayFirst;
+            const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (daysDiff < days) {
+              days = Math.max(1, daysDiff);
+            }
+          }
+        }
+        for (let i = days - 1; i >= 0; i--) {
+          const dayTime = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const dayKey = dayKeyFromDate(dayTime);
+          timeLabels.push(
+            dayTime.toLocaleDateString("en-IN", {
+              timeZone,
+              day: "2-digit",
+              month: "short",
+            }),
+          );
+          clickCounts.push(clicksByTime[dayKey] || 0);
+        }
+      }
+
+      return {
+        period,
+        labels: timeLabels,
+        data: clickCounts,
+        total: clickCounts.reduce((sum, count) => sum + count, 0),
+      };
     } catch (error) {
       throw error;
     }

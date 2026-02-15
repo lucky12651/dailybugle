@@ -8,6 +8,7 @@ import {
   fetchChartLinkStats,
 } from "./helpers/apiHelpers";
 import { copyToClipboard } from "./helpers/utils";
+import OverallStatsSection from "./components/UserPerformanceParts/OverallStatsSection";
 import {
   renderDoughnutChart,
   renderDeviceDistributionChart,
@@ -304,6 +305,10 @@ const App = () => {
                     loadingMore={loadingMoreRecentLinks}
                   />
                 </div>
+              </div>
+
+              <div className="pt-4">
+                <OverallStatsSection token={token} />
               </div>
 
               <div className="pt-4">

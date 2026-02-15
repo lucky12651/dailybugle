@@ -252,6 +252,17 @@ export const fetchGlobalUserTraffic = async (userId, period = "7d", token) => {
   }
 };
 
+export const fetchGlobalTraffic = async (period = "7d", token) => {
+  try {
+    const response = await fetch(`/api/stats/global/traffic?period=${period}`, {
+      headers: getAuthHeaders(token),
+    });
+    return await handleResponse(response);
+  } catch (err) {
+    return { success: false, error: "Network error" };
+  }
+};
+
 export const fetchUserLinks = async (userId, limit = 15, offset = 0, token) => {
   try {
     const response = await fetch(

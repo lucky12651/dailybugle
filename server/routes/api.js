@@ -29,6 +29,24 @@ router.post("/auth/toggle-2fa-setup", authMiddleware, async (req, res) => {
   }
 });
 
+// Global User Stats Routes (Protected)
+router.get(
+  "/stats/global/traffic",
+  authMiddleware,
+  statsController.getGlobalTraffic,
+);
+router.get("/users", authMiddleware, statsController.getAllUsers);
+router.get(
+  "/users/:userId/traffic",
+  authMiddleware,
+  statsController.getGlobalUserTraffic,
+);
+router.get(
+  "/users/:userId/links",
+  authMiddleware,
+  statsController.getUserLinks,
+);
+
 // URL shortening routes (Protected)
 router.post("/shorten", authMiddleware, urlController.shorten);
 router.get("/recent", authMiddleware, urlController.getRecent);
@@ -67,19 +85,6 @@ router.get(
   "/stats/:slug/users/:userId/traffic",
   authMiddleware,
   statsController.getUserTrafficStats,
-);
-
-// Global User Stats Routes (Protected)
-router.get("/users", authMiddleware, statsController.getAllUsers);
-router.get(
-  "/users/:userId/traffic",
-  authMiddleware,
-  statsController.getGlobalUserTraffic,
-);
-router.get(
-  "/users/:userId/links",
-  authMiddleware,
-  statsController.getUserLinks,
 );
 
 module.exports = router;

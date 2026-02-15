@@ -118,6 +118,18 @@ const statsController = {
     }
   },
 
+  // GET /api/stats/global/traffic
+  async getGlobalTraffic(req, res) {
+    try {
+      const { period = "7d" } = req.query;
+      const stats = await StatsService.getGlobalTraffic(period);
+      res.json(stats);
+    } catch (error) {
+      console.error("Global traffic error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
   // GET /api/users/:userId/traffic
   async getGlobalUserTraffic(req, res) {
     try {

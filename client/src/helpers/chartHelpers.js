@@ -368,7 +368,7 @@ export const renderTrafficChart = (canvasId, chartData) => {
           y: {
             beginAtZero: true,
             grid: {
-              color: "#E5E7EB",
+              color: "rgba(229, 231, 235, 0.1)",
             },
             ticks: {
               color: "#6B7280",
@@ -382,7 +382,7 @@ export const renderTrafficChart = (canvasId, chartData) => {
           },
           x: {
             grid: {
-              color: "#E5E7EB",
+              color: "rgba(229, 231, 235, 0.05)",
             },
             ticks: {
               color: "#6B7280",
@@ -454,7 +454,7 @@ export const renderDailyViewsBarChart = (canvasId, chartData) => {
           y: {
             beginAtZero: true,
             grid: {
-              color: "#E5E7EB",
+              color: "rgba(229, 231, 235, 0.1)",
             },
             ticks: {
               color: "#6B7280",
@@ -466,7 +466,7 @@ export const renderDailyViewsBarChart = (canvasId, chartData) => {
           },
           x: {
             grid: {
-              color: "#E5E7EB",
+              color: "rgba(229, 231, 235, 0.05)",
             },
             ticks: {
               color: "#6B7280",

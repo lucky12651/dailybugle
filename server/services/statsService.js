@@ -81,6 +81,14 @@ class StatsService {
     }
   }
 
+  static async getGlobalTraffic(period) {
+    try {
+      return await ClickModel.getGlobalTraffic(period);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getUserLinks(userId, limit, offset) {
     try {
       return await ClickModel.getUserLinks(userId, limit, offset);
