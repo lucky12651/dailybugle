@@ -147,21 +147,20 @@ class ClickModel {
 
   static async getOsStats(slug, period = "7d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
       const cutoffDate = this._getCutoffDate(period);
 
-      const osCount = {};
-      clicks.forEach((click) => {
-        if (click.timestamp && click.deviceInfo && click.deviceInfo.os) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            const os = click.deviceInfo.os;
-            osCount[os] = (osCount[os] || 0) + 1;
-          }
-        }
-      });
+      const result = await db.query(
+        `SELECT device_info->>'os' as os, COUNT(*) as count 
+         FROM clicks 
+         WHERE slug = $1 AND timestamp >= $2 
+         GROUP BY device_info->>'os' 
+         ORDER BY count DESC`,
+        [slug, cutoffDate],
+      );
 
-      const sortedEntries = Object.entries(osCount).sort((a, b) => b[1] - a[1]);
+      const sortedEntries = result.rows
+        .filter((row) => row.os)
+        .map((row) => [row.os, parseInt(row.count)]);
 
       let topEntries = sortedEntries.slice(0, 7);
       let othersCount = 0;
@@ -184,19 +183,18 @@ class ClickModel {
 
   static async getDeviceStats(slug) {
     try {
-      const clicks = await this.findAllBySlug(slug);
-
-      const deviceCount = {};
-      clicks.forEach((click) => {
-        if (click.deviceInfo && click.deviceInfo.deviceType) {
-          const deviceType = click.deviceInfo.deviceType;
-          deviceCount[deviceType] = (deviceCount[deviceType] || 0) + 1;
-        }
-      });
-
-      const sortedEntries = Object.entries(deviceCount).sort(
-        (a, b) => b[1] - a[1],
+      const result = await db.query(
+        `SELECT device_info->>'deviceType' as device, COUNT(*) as count 
+         FROM clicks 
+         WHERE slug = $1 
+         GROUP BY device_info->>'deviceType' 
+         ORDER BY count DESC`,
+        [slug],
       );
+
+      const sortedEntries = result.rows
+        .filter((row) => row.device)
+        .map((row) => [row.device, parseInt(row.count)]);
 
       let topEntries = sortedEntries.slice(0, 7);
       let othersCount = 0;
@@ -219,45 +217,43 @@ class ClickModel {
 
   static async getReferrerStats(slug, period = "7d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
       const cutoffDate = this._getCutoffDate(period);
 
+      const result = await db.query(
+        `SELECT referer, COUNT(*) as count 
+         FROM clicks 
+         WHERE slug = $1 AND timestamp >= $2 
+         GROUP BY referer`,
+        [slug, cutoffDate],
+      );
+
       const referrerCount = {};
-      clicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            const referrer = click.referer || "Direct Traffic";
+      result.rows.forEach((row) => {
+        const referrer = row.referer || "Direct Traffic";
+        const count = parseInt(row.count);
 
-            let cleanReferrer = "Direct Traffic";
-            if (referrer !== "Direct Traffic" && referrer) {
-              try {
-                const url = new URL(referrer);
-                const hostname = url.hostname.replace("www.", "");
+        let cleanReferrer = "Direct Traffic";
+        if (referrer !== "Direct Traffic" && referrer) {
+          try {
+            const url = new URL(referrer);
+            const hostname = url.hostname.replace("www.", "");
 
-                if (hostname.includes("google")) cleanReferrer = "Google";
-                else if (hostname.includes("bing")) cleanReferrer = "Bing";
-                else if (hostname.includes("yahoo")) cleanReferrer = "Yahoo";
-                else if (hostname.includes("facebook"))
-                  cleanReferrer = "Facebook";
-                else if (
-                  hostname.includes("twitter") ||
-                  hostname.includes("x.com")
-                )
-                  cleanReferrer = "Twitter/X";
-                else if (hostname.includes("linkedin"))
-                  cleanReferrer = "LinkedIn";
-                else if (hostname.includes("reddit")) cleanReferrer = "Reddit";
-                else cleanReferrer = hostname;
-              } catch (e) {
-                cleanReferrer = "Invalid URL";
-              }
-            }
-
-            referrerCount[cleanReferrer] =
-              (referrerCount[cleanReferrer] || 0) + 1;
+            if (hostname.includes("google")) cleanReferrer = "Google";
+            else if (hostname.includes("bing")) cleanReferrer = "Bing";
+            else if (hostname.includes("yahoo")) cleanReferrer = "Yahoo";
+            else if (hostname.includes("facebook")) cleanReferrer = "Facebook";
+            else if (hostname.includes("twitter") || hostname.includes("x.com"))
+              cleanReferrer = "Twitter/X";
+            else if (hostname.includes("linkedin")) cleanReferrer = "LinkedIn";
+            else if (hostname.includes("reddit")) cleanReferrer = "Reddit";
+            else cleanReferrer = hostname;
+          } catch (e) {
+            cleanReferrer = "Invalid URL";
           }
         }
+
+        referrerCount[cleanReferrer] =
+          (referrerCount[cleanReferrer] || 0) + count;
       });
 
       const sortedEntries = Object.entries(referrerCount).sort(
@@ -285,30 +281,33 @@ class ClickModel {
 
   static async getBotStats(slug, period = "7d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
       const cutoffDate = this._getCutoffDate(period);
+
+      const result = await db.query(
+        `SELECT is_bot, bot_category, bot_name, COUNT(*) as count 
+         FROM clicks 
+         WHERE slug = $1 AND timestamp >= $2 
+         GROUP BY is_bot, bot_category, bot_name`,
+        [slug, cutoffDate],
+      );
 
       const trafficTypeCount = { human: 0, bot: 0 };
       const botCategoryCount = {};
       const botNameCount = {};
 
-      clicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            if (click.isBot) {
-              trafficTypeCount.bot++;
+      result.rows.forEach((row) => {
+        const count = parseInt(row.count);
+        if (row.is_bot) {
+          trafficTypeCount.bot += count;
 
-              const category = click.botCategory || "Unknown";
-              botCategoryCount[category] =
-                (botCategoryCount[category] || 0) + 1;
+          const category = row.bot_category || "Unknown";
+          botCategoryCount[category] =
+            (botCategoryCount[category] || 0) + count;
 
-              const botName = click.botName || "Unknown Bot";
-              botNameCount[botName] = (botNameCount[botName] || 0) + 1;
-            } else {
-              trafficTypeCount.human++;
-            }
-          }
+          const botName = row.bot_name || "Unknown Bot";
+          botNameCount[botName] = (botNameCount[botName] || 0) + count;
+        } else {
+          trafficTypeCount.human += count;
         }
       });
 
@@ -352,11 +351,28 @@ class ClickModel {
 
   static async getTrafficStats(slug, period = "7d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
-
       const now = new Date();
-      const locale = "en-IN";
+      const cutoffDate = this._getCutoffDate(period);
       const timeZone = "Asia/Kolkata";
+
+      let dateFormat = "YYYY-MM-DD";
+      if (period === "24h") dateFormat = 'YYYY-MM-DD"T"HH24:00:00';
+
+      const result = await db.query(
+        `SELECT to_char(timestamp at time zone $4, $3) as time_key, COUNT(*) as count
+         FROM clicks
+         WHERE slug = $1 AND timestamp >= $2
+         GROUP BY time_key
+         ORDER BY time_key ASC`,
+        [slug, cutoffDate, dateFormat, timeZone],
+      );
+
+      const clicksByTime = {};
+      result.rows.forEach((row) => {
+        clicksByTime[row.time_key] = parseInt(row.count);
+      });
+
+      const locale = "en-IN";
       const hourFormatter = new Intl.DateTimeFormat(locale, {
         timeZone,
         year: "numeric",
@@ -383,45 +399,6 @@ class ClickModel {
         );
         return `${parts.year}-${parts.month}-${parts.day}`;
       };
-      let cutoffDate;
-
-      switch (period) {
-        case "24h":
-          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case "3d":
-          cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-          break;
-        case "7d":
-          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "45d":
-          cutoffDate = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      }
-
-      const clicksByTime = {};
-      clicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            let timeKey;
-
-            if (period === "24h") {
-              timeKey = hourKeyFromDate(clickTime);
-            } else {
-              timeKey = dayKeyFromDate(clickTime);
-            }
-
-            clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
-          }
-        }
-      });
 
       const timeLabels = [];
       const clickCounts = [];
@@ -478,23 +455,20 @@ class ClickModel {
 
   static async getCountryStats(slug, period = "7d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
       const cutoffDate = this._getCutoffDate(period);
 
-      const countryCount = {};
-      clicks.forEach((click) => {
-        if (click.timestamp && click.country) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            const country = click.country;
-            countryCount[country] = (countryCount[country] || 0) + 1;
-          }
-        }
-      });
-
-      const sortedEntries = Object.entries(countryCount).sort(
-        (a, b) => b[1] - a[1],
+      const result = await db.query(
+        `SELECT country, COUNT(*) as count 
+         FROM clicks 
+         WHERE slug = $1 AND timestamp >= $2 
+         GROUP BY country 
+         ORDER BY count DESC`,
+        [slug, cutoffDate],
       );
+
+      const sortedEntries = result.rows
+        .filter((row) => row.country)
+        .map((row) => [row.country, parseInt(row.count)]);
 
       let topEntries = sortedEntries.slice(0, 7);
       let othersCount = 0;
@@ -519,12 +493,28 @@ class ClickModel {
 
   static async getUserTrafficStats(slug, userId, period = "30d") {
     try {
-      const clicks = await this.findAllBySlug(slug);
-      const userClicks = clicks.filter((click) => click.userId === userId);
-
       const now = new Date();
-      const locale = "en-IN";
+      const cutoffDate = this._getCutoffDate(period);
       const timeZone = "Asia/Kolkata";
+
+      let dateFormat = "YYYY-MM-DD";
+      if (period === "24h") dateFormat = 'YYYY-MM-DD"T"HH24:00:00';
+
+      const result = await db.query(
+        `SELECT to_char(timestamp at time zone $4, $3) as time_key, COUNT(*) as count
+         FROM clicks
+         WHERE slug = $1 AND user_id = $5 AND timestamp >= $2
+         GROUP BY time_key
+         ORDER BY time_key ASC`,
+        [slug, cutoffDate, dateFormat, timeZone, userId],
+      );
+
+      const clicksByTime = {};
+      result.rows.forEach((row) => {
+        clicksByTime[row.time_key] = parseInt(row.count);
+      });
+
+      const locale = "en-IN";
       const hourFormatter = new Intl.DateTimeFormat(locale, {
         timeZone,
         year: "numeric",
@@ -553,39 +543,6 @@ class ClickModel {
         );
         return `${parts.year}-${parts.month}-${parts.day}`;
       };
-
-      let cutoffDate;
-      switch (period) {
-        case "24h":
-          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case "3d":
-          cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-          break;
-        case "7d":
-          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-        default:
-          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-      }
-
-      const clicksByTime = {};
-      userClicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            let timeKey;
-            if (period === "24h") {
-              timeKey = hourKeyFromDate(clickTime);
-            } else {
-              timeKey = dayKeyFromDate(clickTime);
-            }
-            clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
-          }
-        }
-      });
 
       const timeLabels = [];
       const clickCounts = [];
@@ -633,41 +590,32 @@ class ClickModel {
 
   static async getUserStats(slug) {
     try {
-      const clicks = await this.findAllBySlug(slug);
-
-      const userStats = {};
-      clicks.forEach((click) => {
-        if (click.userId) {
-          const uid = click.userId;
-          if (!userStats[uid]) {
-            userStats[uid] = { count: 0, lastFetched: click.timestamp };
-          }
-          userStats[uid].count++;
-          // Update lastFetched if this click is more recent
-          if (
-            click.timestamp &&
-            new Date(click.timestamp) > new Date(userStats[uid].lastFetched)
-          ) {
-            userStats[uid].lastFetched = click.timestamp;
-          }
-        }
-      });
-
-      const sortedEntries = Object.entries(userStats).sort(
-        (a, b) => b[1].count - a[1].count,
+      const result = await db.query(
+        `SELECT user_id, COUNT(*) as count, MAX(timestamp) as last_fetched 
+         FROM clicks 
+         WHERE slug = $1 AND user_id IS NOT NULL 
+         GROUP BY user_id 
+         ORDER BY count DESC`,
+        [slug],
       );
+
+      const sortedEntries = result.rows.map((row) => ({
+        userId: row.user_id,
+        count: parseInt(row.count),
+        lastFetched: row.last_fetched,
+      }));
 
       // Top 10 users for chart
       let topEntries = sortedEntries.slice(0, 10);
 
-      const labels = topEntries.map((entry) => entry[0]);
-      const data = topEntries.map((entry) => entry[1].count);
+      const labels = topEntries.map((entry) => entry.userId);
+      const data = topEntries.map((entry) => entry.count);
 
       // Full list for table
-      const userDetails = sortedEntries.map(([uid, stats]) => ({
-        userId: uid,
-        views: stats.count,
-        lastFetched: stats.lastFetched,
+      const userDetails = sortedEntries.map((entry) => ({
+        userId: entry.userId,
+        views: entry.count,
+        lastFetched: entry.lastFetched,
       }));
 
       return { labels, data, userDetails };
@@ -721,15 +669,26 @@ class ClickModel {
   static async getGlobalTraffic(period = "7d") {
     try {
       const cutoffDate = this._getCutoffDate(period);
+      const timeZone = "Asia/Kolkata";
+
+      let dateFormat = "YYYY-MM-DD";
+      if (period === "24h") dateFormat = 'YYYY-MM-DD"T"HH24:00:00';
+
       const result = await db.query(
-        `SELECT timestamp FROM clicks WHERE timestamp >= $1`,
-        [cutoffDate],
+        `SELECT to_char(timestamp at time zone $3, $2) as time_key, COUNT(*) as count
+         FROM clicks
+         WHERE timestamp >= $1
+         GROUP BY time_key`,
+        [cutoffDate, dateFormat, timeZone],
       );
-      const clicks = result.rows;
+
+      const clicksByTime = {};
+      result.rows.forEach((row) => {
+        clicksByTime[row.time_key] = parseInt(row.count);
+      });
 
       const now = new Date();
       const locale = "en-IN";
-      const timeZone = "Asia/Kolkata";
       const hourFormatter = new Intl.DateTimeFormat(locale, {
         timeZone,
         year: "numeric",
@@ -756,22 +715,6 @@ class ClickModel {
         );
         return `${parts.year}-${parts.month}-${parts.day}`;
       };
-
-      const clicksByTime = {};
-      clicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          let timeKey;
-
-          if (period === "24h") {
-            timeKey = hourKeyFromDate(clickTime);
-          } else {
-            timeKey = dayKeyFromDate(clickTime);
-          }
-
-          clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
-        }
-      });
 
       const timeLabels = [];
       const clickCounts = [];
@@ -804,10 +747,12 @@ class ClickModel {
 
         if (period === "120d") {
           const minDateResult = await db.query(
-            "SELECT MIN(timestamp) as first_timestamp FROM clicks"
+            "SELECT MIN(timestamp) as first_timestamp FROM clicks",
           );
           if (minDateResult.rows[0]?.first_timestamp) {
-            const firstTimestamp = new Date(minDateResult.rows[0].first_timestamp);
+            const firstTimestamp = new Date(
+              minDateResult.rows[0].first_timestamp,
+            );
             const startOfDayFirst = new Date(firstTimestamp);
             startOfDayFirst.setHours(0, 0, 0, 0);
             const startOfDayNow = new Date(now);
@@ -846,11 +791,27 @@ class ClickModel {
 
   static async getGlobalUserTraffic(userId, period = "7d") {
     try {
-      const clicks = await this.findAllByUserId(userId);
+      const cutoffDate = this._getCutoffDate(period);
+      const timeZone = "Asia/Kolkata";
+
+      let dateFormat = "YYYY-MM-DD";
+      if (period === "24h") dateFormat = 'YYYY-MM-DD"T"HH24:00:00';
+
+      const result = await db.query(
+        `SELECT to_char(timestamp at time zone $4, $3) as time_key, COUNT(*) as count
+         FROM clicks
+         WHERE user_id = $1 AND timestamp >= $2
+         GROUP BY time_key`,
+        [userId, cutoffDate, dateFormat, timeZone],
+      );
+
+      const clicksByTime = {};
+      result.rows.forEach((row) => {
+        clicksByTime[row.time_key] = parseInt(row.count);
+      });
 
       const now = new Date();
       const locale = "en-IN";
-      const timeZone = "Asia/Kolkata";
       const hourFormatter = new Intl.DateTimeFormat(locale, {
         timeZone,
         year: "numeric",
@@ -877,45 +838,6 @@ class ClickModel {
         );
         return `${parts.year}-${parts.month}-${parts.day}`;
       };
-      let cutoffDate;
-
-      switch (period) {
-        case "24h":
-          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case "3d":
-          cutoffDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-          break;
-        case "7d":
-          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case "45d":
-          cutoffDate = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
-          break;
-        case "30d":
-          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      }
-
-      const clicksByTime = {};
-      clicks.forEach((click) => {
-        if (click.timestamp) {
-          const clickTime = new Date(click.timestamp);
-          if (clickTime >= cutoffDate) {
-            let timeKey;
-
-            if (period === "24h") {
-              timeKey = hourKeyFromDate(clickTime);
-            } else {
-              timeKey = dayKeyFromDate(clickTime);
-            }
-
-            clicksByTime[timeKey] = (clicksByTime[timeKey] || 0) + 1;
-          }
-        }
-      });
 
       const timeLabels = [];
       const clickCounts = [];
