@@ -212,19 +212,18 @@ const UserPerformance = ({ token }) => {
             User Performance
           </h2>
           <div className="flex gap-2">
+            {/* 
             <button
               onClick={handleDeleteAllData}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-600/10"
             >
               <Trash2 size={18} />
-              <span>Delete All Data</span>
-            </button>
+            </button> */}
             <button
               onClick={() => setIsLinkGeneratorOpen(true)}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded-xl transition-all shadow-lg shadow-green-600/10"
             >
               <Plus size={18} />
-              <span>Convert Link</span>
             </button>
           </div>
         </div>
