@@ -4,6 +4,7 @@ import {
   fetchGlobalUserTraffic,
   fetchUserLinks,
   fetchUserDailyTraffic,
+  deleteAllUsers,
 } from "../helpers/apiHelpers";
 import TrafficChartSection from "./UserPerformanceParts/TrafficChartSection";
 import LinksTable from "./UserPerformanceParts/LinksTable";
@@ -11,7 +12,7 @@ import LinkInfoModal from "./UserPerformanceParts/LinkInfoModal";
 import DailyViewsModal from "./UserPerformanceParts/DailyViewsModal";
 import LinkGeneratorModal from "./UserPerformanceParts/LinkGeneratorModal";
 import Loader from "./Loader";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Trash2 } from "lucide-react";
 
 const UserPerformance = ({ token }) => {
   const [users, setUsers] = useState([]);
@@ -172,6 +173,24 @@ const UserPerformance = ({ token }) => {
     }
   };
 
+  const handleDeleteAllData = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete ALL user data? This action cannot be undone.",
+      )
+    ) {
+      const result = await deleteAllUsers(token);
+      if (result.success) {
+        setUsers([]);
+        setSelectedUser(null);
+        setTrafficData(null);
+        setUserLinks([]);
+      } else {
+        alert("Failed to delete user data");
+      }
+    }
+  };
+
   if (loadingUsers && users.length === 0) {
     return (
       <div className="bg-zinc-950 border border-zinc-900 rounded-2xl shadow-2xl shadow-zinc-950/50 p-8 mt-8 flex justify-center">
@@ -192,13 +211,22 @@ const UserPerformance = ({ token }) => {
             <Users className="text-green-500" size={20} />
             User Performance
           </h2>
-          <button
-            onClick={() => setIsLinkGeneratorOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded-xl transition-all shadow-lg shadow-green-600/10"
-          >
-            <Plus size={18} />
-            <span>Convert Link</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDeleteAllData}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-600/10"
+            >
+              <Trash2 size={18} />
+              <span>Delete All Data</span>
+            </button>
+            <button
+              onClick={() => setIsLinkGeneratorOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-black font-bold rounded-xl transition-all shadow-lg shadow-green-600/10"
+            >
+              <Plus size={18} />
+              <span>Convert Link</span>
+            </button>
+          </div>
         </div>
 
         {/* User Tabs */}

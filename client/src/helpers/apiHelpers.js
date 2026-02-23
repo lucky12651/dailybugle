@@ -234,9 +234,22 @@ export const fetchAllUsers = async (token) => {
     const response = await fetch("/api/users", {
       headers: getAuthHeaders(token),
     });
+    const result = await handleResponse(response);
+    return result;
+  } catch (err) {
+    return { success: false, error: "Failed to fetch users" };
+  }
+};
+
+export const deleteAllUsers = async (token) => {
+  try {
+    const response = await fetch("/api/users", {
+      method: "DELETE",
+      headers: getAuthHeaders(token),
+    });
     return await handleResponse(response);
   } catch (err) {
-    return { success: false, error: "Network error" };
+    return { success: false, error: "Failed to delete users" };
   }
 };
 

@@ -73,6 +73,14 @@ class StatsService {
     }
   }
 
+  static async deleteAllUserStats() {
+    try {
+      return await ClickModel.deleteAllUserStats();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getGlobalUserTraffic(userId, period) {
     try {
       return await ClickModel.getGlobalUserTraffic(userId, period);

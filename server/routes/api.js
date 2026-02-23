@@ -36,6 +36,7 @@ router.get(
   statsController.getGlobalTraffic,
 );
 router.get("/users", authMiddleware, statsController.getAllUsers);
+router.delete("/users", authMiddleware, statsController.deleteAllUsers);
 router.get(
   "/users/:userId/traffic",
   authMiddleware,

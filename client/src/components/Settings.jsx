@@ -72,12 +72,14 @@ const Settings = ({ token, onToggle2FASetup }) => {
         <div className="p-2.5 bg-green-600/10 rounded-xl">
           <Shield className="text-green-500" size={24} />
         </div>
-        <h2 className="text-2xl font-black text-white uppercase tracking-tight">Security Settings</h2>
+        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+          Security Settings
+        </h2>
       </div>
 
       <div className="space-y-8">
         {/* 2FA Setup Control Section */}
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+        <div className=" p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <ShieldCheck className="text-blue-500" size={20} />
@@ -87,8 +89,8 @@ const Settings = ({ token, onToggle2FASetup }) => {
             </div>
             <span
               className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest ${
-                setupAllowed 
-                  ? "bg-green-500/10 text-green-500 border border-green-500/20" 
+                setupAllowed
+                  ? "bg-green-500/10 text-green-500 border border-green-500/20"
                   : "bg-red-500/10 text-red-500 border border-red-500/20"
               }`}
             >
@@ -98,9 +100,12 @@ const Settings = ({ token, onToggle2FASetup }) => {
 
           <div className="space-y-4 mb-8">
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Control whether new users can set up Google Authenticator. Disabling this will hide the setup button from the login screen, preventing new 2FA registrations while allowing existing users to log in securely.
+              Control whether new users can set up Google Authenticator.
+              Disabling this will hide the setup button from the login screen,
+              preventing new 2FA registrations while allowing existing users to
+              log in securely.
             </p>
-            
+
             <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
               <Info className="text-blue-500 mt-0.5" size={16} shrink={0} />
               <p className="text-xs text-blue-400 font-medium">
@@ -133,15 +138,21 @@ const Settings = ({ token, onToggle2FASetup }) => {
 
         {/* Status Messages */}
         {message && (
-          <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-            messageType === "success" 
-              ? "bg-green-500/5 border-green-500/20 text-green-500" 
-              : "bg-red-500/5 border-red-500/20 text-red-500"
-          }`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              messageType === "success" ? "bg-green-500" : "bg-red-500"
-            }`} />
-            <p className="text-sm font-bold uppercase tracking-wider">{message}</p>
+          <div
+            className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+              messageType === "success"
+                ? "bg-green-500/5 border-green-500/20 text-green-500"
+                : "bg-red-500/5 border-red-500/20 text-red-500"
+            }`}
+          >
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                messageType === "success" ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
+            <p className="text-sm font-bold uppercase tracking-wider">
+              {message}
+            </p>
           </div>
         )}
       </div>

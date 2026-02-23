@@ -635,6 +635,15 @@ class ClickModel {
     }
   }
 
+  static async deleteAllUserStats() {
+    try {
+      await db.query(`DELETE FROM clicks WHERE user_id IS NOT NULL`);
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async findAllByUserId(userId) {
     try {
       const result = await db.query(`SELECT * FROM clicks WHERE user_id = $1`, [

@@ -118,6 +118,17 @@ const statsController = {
     }
   },
 
+  // DELETE /api/users
+  async deleteAllUsers(req, res) {
+    try {
+      await StatsService.deleteAllUserStats();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete all users error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  },
+
   // GET /api/stats/global/traffic
   async getGlobalTraffic(req, res) {
     try {
