@@ -4,8 +4,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
-
+# Environment variables / secrets (never commit)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 .env.local
 .env.development.local
 .env.test.local
@@ -13,6 +18,8 @@ yarn-error.log*
 
 # Firebase service account
 server/firebaseServiceAccount.json
+**/firebaseServiceAccount.json
+**/serviceAccount*.json
 
 # Build outputs
 dist/
